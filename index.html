@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calendario Vacaciones</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 1rem;
+    background: linear-gradient(135deg, #d0f0fd, #ffffff);
+    color: #222;
+    text-align: center;
+  }
+  h1 {
+    color: #007B8A; /* azul turquesa fuerte */
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .selectors {
+    margin-bottom: 1rem;
+  }
+  select {
+    font-size: 1rem;
+    padding: 0.3rem 0.6rem;
+    margin: 0 0.3rem;
+    border-radius: 8px;
+    border: 2px solid #00a8b5;
+    background-color: #e0f7fa;
+    color: #004d4d;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  select:hover {
+    background-color: #b2ebf2;
+  }
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .day, .header {
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    user-select: none;
+    font-weight: 600;
+  }
+  .header {
+    background-color: #004d59; /* azul oscuro para encabezados */
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .day {
+    background-color: #ffffff; /* fondo blanco para días normales */
+    cursor: pointer;
+    color: #004d4d;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .day:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px rgba(0,184,212,0.4);
+  }
+  .day.vacation {
+    background-color: #ff7043; /* naranja melocotón */
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 0 12px 2px #ff7043;
+  }
+  .day.medical {
+    background-color: #4caf50; /* verde */
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 0 8px #4caf50;
+  }
+  .counters {
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #007b8a;
+  }
+  #vacationMonths {
+    margin-top: 1.5rem;
+    text-align: left;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    background: #e0f7fa;
+    padding: 12px 18px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 10px #00acc1;
+    color: #004d4d;
+  }
+  #vacationMonths h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+  #vacationMonths ul {
+    list-style: inside disc;
+    padding-left: 0;
+    margin: 0.3rem 0 0 0;
+  }
+  #vacationMonths ul li {
+    margin-bottom: 0.3rem;
+  }
+  /* Modal styles */
+  #modalBackground {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0,0,0,0.45);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  #modalContent {
+    background: white;
+    padding: 1.5rem 2.5rem;
+    border-radius: 14px;
+    max-width: 280px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  }
+  #modalContent button {
+    margin: 0.5rem;
+    padding: 0.55rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    min-width: 90px;
+    transition: background-color 0.3s ease;
+    color: white;
+  }
+  #modalContent button.vacationBtn {
+    background-color: #ff7043;
+  }
+  #modalContent button.vacationBtn:hover {
+    background-color: #e64a19;
+  }
+  #modalContent button.medicalBtn {
+    background-color: #4caf50;
+  }
+  #modalContent button.medicalBtn:hover {
+    background-color: #388e3c;
+  }
+  #modalContent button.clearBtn {
+    background-color: #b0bec5;
+    color: #37474f;
+  }
+  #modalContent button.clearBtn:hover {
+    background-color: #90a4ae;
+  }
+</style>
+</head>
+<body>
+<h1>Calendario Vacaciones</h1>
+
+<div class="selectors">
+  <label for="selectMonth">Mes:</label>
+  <select id="selectMonth"></select>
+
+  <label for="selectYear">Año:</label>
+  <select id="selectYear"></select>
+</div>
+
+<div class="counters">
+  <div id="vacationCount">Días de vacaciones usados: 0</div>
+  <div id="medicalCount">Días médicos: 0</div>
+  <div id="remaining">Vacaciones restantes: 23</div>
+</div>
+
+<div class="calendar" id="calendar"></div>
+
+<div id="vacationMonths">
+  <h2 id="vacationMonthsTitle">Vacaciones</h2>
+  <ul id="monthsList"></ul>
+</div>
+
+<!-- Modal -->
+<div id="modalBackground">
+  <div id="modalContent">
+    <p>Selecciona tipo de día</p>
+    <button class="vacationBtn">Vacaciones</button>
+    <button class="medicalBtn">Baja/Médico</button>
+    <button class="clearBtn">Quitar</button>
+  </div>
+</div>
+
+<script>
+  const vacationLimit = 23;
+  const calendar = document.getElementById("calendar");
+  const vacationCount = document.getElementById("vacationCount");
+  const medicalCount = document.getElementById("medicalCount");
+  const remaining = document.getElementById("remaining");
+  const monthsList = document.getElementById("monthsList");
+  const vacationMonthsTitle = document.getElementById("vacationMonthsTitle");
+
+  const selectMonth = document.getElementById("selectMonth");
+  const selectYear = document.getElementById("selectYear");
+
+  const modalBackground = document.getElementById("modalBackground");
+  const vacationBtn = modalBackground.querySelector(".vacationBtn");
+  const medicalBtn = modalBackground.querySelector(".medicalBtn");
+  const clearBtn = modalBackground.querySelector(".clearBtn");
+
+  const daysOfWeek = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+  let currentYear, currentMonth;
+  let selectedDayElement = null;
+
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+  // Rellenar meses y años en selects
+  const today = new Date();
+  const thisYear = today.getFullYear();
+
+  for(let i=0; i<12; i++) {
+    let opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = monthNames[i];
+    selectMonth.appendChild(opt);
+  }
+  for(let y=thisYear-10; y<=thisYear+10; y++) {
+    let opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = y;
+    selectYear.appendChild(opt);
+  }
+
+  selectMonth.value = today.getMonth();
+  selectYear.value = today.getFullYear();
+  currentMonth = today.getMonth();
+  currentYear = today.getFullYear();
+
+  function getStorageKey(year, month) {
+    return `calendarState-${year}-${month}`;
+  }
+
+  function updateCounters() {
+    const vacationDays = document.querySelectorAll(".vacation").length;
+    const medicalDays = document.querySelectorAll(".medical").length;
+    vacationCount.textContent = "Días de vacaciones usados: " + vacationDays;
+    medicalCount.textContent = "Días médicos: " + medicalDays;
+    remaining.textContent = "Vacaciones restantes: " + (vacationLimit - vacationDays);
+  }
+
+  function saveStates(year, month) {
+    const days = document.querySelectorAll(".day");
+    const saved = {};
+    days.forEach(day => {
+      if(day.classList.contains("vacation")) saved[day.dataset.day] = "vacation";
+      else if(day.classList.contains("medical")) saved[day.dataset.day] = "medical";
+    });
+    localStorage.setItem(getStorageKey(year, month), JSON.stringify(saved));
+  }
+
+  function loadSavedStates(year, month) {
+    return JSON.parse(localStorage.getItem(getStorageKey(year, month)) || "{}");
+  }
+
+  function renderCalendar(year, month) {
+    calendar.innerHTML = "";
+    daysOfWeek.forEach(d => {
+      let h = document.createElement("div");
+      h.className = "header";
+      h.textContent = d;
+      calendar.appendChild(h);
+    });
+
+    let firstDay = new Date(year, month, 1).getDay();
+    let offset = firstDay === 0 ? 6 : firstDay - 1;
+
+    for(let i=0; i<offset; i++) {
+      let empty = document.createElement("div");
+      empty.className = "day";
+      empty.style.background = "transparent";
+      empty.style.cursor = "default";
+      calendar.appendChild(empty);
+    }
+
+    let daysInMonth = new Date(year, month+1, 0).getDate();
+    let savedStates = loadSavedStates(year, month);
+
+    for(let day=1; day<=daysInMonth; day++) {
+      let d = document.createElement("div");
+      d.className = "day";
+      d.textContent = day;
+      d.dataset.day = day;
+      if(savedStates[day] === "vacation") d.classList.add("vacation");
+      else if(savedStates[day] === "medical") d.classList.add("medical");
+
+      d.addEventListener("click", () => {
+        selectedDayElement = d;
+        modalBackground.style.display = "flex";
+      });
+
+      calendar.appendChild(d);
+    }
+    updateCounters();
+    updateVacationMonths(year);
+  }
+
+  function updateVacationMonths(year) {
+    const monthsUsed = {};
+    for(let m=0; m<12; m++) {
+      const state = loadSavedStates(year, m);
+      let vacationCount = 0;
+      let medicalCount = 0;
+      for(const day in state) {
+        if(state[day] === "vacation") vacationCount++;
+        else if(state[day] === "medical") medicalCount++;
+      }
+      if(vacationCount > 0 || medicalCount > 0) {
+        monthsUsed[m] = { vacation: vacationCount, medical: medicalCount };
+      }
+    }
+    monthsList.innerHTML = "";
+    vacationMonthsTitle.textContent = `Vacaciones y Bajas ${year}`;
+    const sortedMonths = Object.keys(monthsUsed).sort((a,b) => a-b);
+    sortedMonths.forEach(m => {
+      const li = document.createElement("li");
+      const vac = monthsUsed[m].vacation;
+      const med = monthsUsed[m].medical;
+      let text = `${monthNames[m]} - `;
+      if(vac > 0) text += `${vac} día${vac > 1 ? 's' : ''} vacaciones`;
+      if(med > 0) {
+        if(vac > 0) text += ", ";
+        text += `${med} día${med > 1 ? 's' : ''} baja/médico`;
+      }
+      li.textContent = text;
+      monthsList.appendChild(li);
+    });
+    if(sortedMonths.length === 0) {
+      monthsList.innerHTML = "<li>No hay días de vacaciones o bajas registrados.</li>";
+    }
+  }
+
+  vacationBtn.addEventListener("click", () => {
+    if(selectedDayElement) {
+      selectedDayElement.classList.remove("medical");
+      selectedDayElement.classList.add("vacation");
+      saveStates(currentYear, currentMonth);
+      updateCounters();
+      updateVacationMonths(currentYear);
+    }
+    modalBackground.style.display = "none";
+  });
+
+  medicalBtn.addEventListener("click", () => {
+    if(selectedDayElement) {
+      selectedDayElement.classList.remove("vacation");
+      selectedDayElement.classList.add("medical");
+      saveStates(currentYear, currentMonth);
+      updateCounters();
+      updateVacationMonths(currentYear);
+    }
+    modalBackground.style.display = "none";
+  });
+
+  clearBtn.addEventListener("click", () => {
+    if(selectedDayElement) {
+      selectedDayElement.classList.remove("vacation");
+      selectedDayElement.classList.remove("medical");
+      saveStates(currentYear, currentMonth);
+      updateCounters();
+      updateVacationMonths(currentYear);
+    }
+    modalBackground.style.display = "none";
+  });
+
+  modalBackground.addEventListener("click", (e) => {
+    if(e.target === modalBackground) {
+      modalBackground.style.display = "none";
+    }
+  });
+
+  selectMonth.addEventListener("change", () => {
+    currentMonth = parseInt(selectMonth.value);
+    renderCalendar(currentYear, currentMonth);
+  });
+  selectYear.addEventListener("change", () => {
+    currentYear = parseInt(selectYear.value);
+    renderCalendar(currentYear, currentMonth);
+  });
+
+  renderCalendar(currentYear, currentMonth);
+</script>
+</body>
+</html>
