@@ -251,12 +251,21 @@
   }
 
   function updateCounters() {
-    const vacationDays = document.querySelectorAll(".vacation").length;
-    const medicalDays = document.querySelectorAll(".medical").length;
-    vacationCount.textContent = "Días de vacaciones usados: " + vacationDays;
-    medicalCount.textContent = "Días médicos: " + medicalDays;
-    remaining.textContent = "Vacaciones restantes: " + (vacationLimit - vacationDays);
+  let totalVacation = 0;
+  let totalMedical = 0;
+
+  for (let m = 0; m < 12; m++) {
+    const state = loadSavedStates(currentYear, m);
+    for (const day in state) {
+      if (state[day] === "vacation") totalVacation++;
+      if (state[day] === "medical") totalMedical++;
+    }
   }
+
+  vacationCount.textContent = "Días de vacaciones usados: " + totalVacation;
+  medicalCount.textContent = "Días médicos: " + totalMedical;
+  remaining.textContent = "Vacaciones restantes: " + (vacationLimit - totalVacation);
+}
 
   function saveStates(year, month) {
     const days = document.querySelectorAll(".day");
