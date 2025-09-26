@@ -17,13 +17,15 @@
     .day { border: 1px solid #ccc; padding: 0.4rem; text-align: center; cursor: pointer; border-radius: 4px; }
     .vacation { background-color: #FFCC80; }
     .medical { background-color: #90CAF9; }
-    .holiday { background-color: #C8E6C9; } /* Festivos */
+    .holiday-national { background-color: #F28B82; } /* Festivos nacionales en rojo suave */
+    .holiday-local { background-color: #E1BEE7; }    /* Festivos locales en magenta */
     .today { border: 2px solid #3f51b5; }
-    .labels { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; }
+    .labels { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; flex-wrap: wrap; }
     .labels span { display: inline-flex; align-items: center; gap: 0.3rem; }
     .vacation-dot { width: 1rem; height: 1rem; background-color: #FFCC80; border-radius: 50%; display: inline-block; }
     .medical-dot { width: 1rem; height: 1rem; background-color: #90CAF9; border-radius: 50%; display: inline-block; }
-    .holiday-dot { width: 1rem; height: 1rem; background-color: #C8E6C9; border-radius: 50%; display: inline-block; }
+    .holiday-national-dot { width: 1rem; height: 1rem; background-color: #F28B82; border-radius: 50%; display: inline-block; }
+    .holiday-local-dot { width: 1rem; height: 1rem; background-color: #E1BEE7; border-radius: 50%; display: inline-block; }
     @media (max-width: 600px) { .days { font-size: 0.7rem; } }
   </style>
 </head>
@@ -37,7 +39,8 @@
   <div class="labels">
     <span><span class="vacation-dot"></span> Vacaciones</span>
     <span><span class="medical-dot"></span> Médico</span>
-    <span><span class="holiday-dot"></span> Festivo</span>
+    <span><span class="holiday-national-dot"></span> Festivo Nacional</span>
+    <span><span class="holiday-local-dot"></span> Festivo Local</span>
   </div>
   <div class="calendar" id="calendar"></div>
 
@@ -87,7 +90,6 @@
       thursday.setDate(easter.getDate() - 3); // Jueves Santo
       const friday = new Date(easter);
       friday.setDate(easter.getDate() - 2);   // Viernes Santo
-
       return [
         `${year}-${thursday.getMonth() + 1}-${thursday.getDate()}`,
         `${year}-${friday.getMonth() + 1}-${friday.getDate()}`
@@ -105,16 +107,17 @@
       return holidays;
     }
 
-    // === Generador de festivos ===
-    function getAllHolidays(year) {
-      return new Set([
+    // === Generador de festivos separados ===
+    function getHolidaySets(year) {
+      const national = new Set([
         ...getFixedHolidays(year),
-        ...getEasterRelatedHolidays(year),
-        ...getLocalHolidays(year)
+        ...getEasterRelatedHolidays(year)
       ]);
+      const local = new Set(getLocalHolidays(year));
+      return { national, local };
     }
 
-    const holidays = getAllHolidays(currentYear);
+    const { national: nationalHolidays, local: localHolidays } = getHolidaySets(currentYear);
 
     function createCalendar(year) {
       calendar.innerHTML = "";
@@ -152,8 +155,10 @@
           if (dateKey === getTodayKey()) {
             dayDiv.classList.add("today");
           }
-          if (holidays.has(dateKey)) {
-            dayDiv.classList.add("holiday");
+          if (nationalHolidays.has(dateKey)) {
+            dayDiv.classList.add("holiday-national");
+          } else if (localHolidays.has(dateKey)) {
+            dayDiv.classList.add("holiday-local");
           } else {
             dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
           }
@@ -176,7 +181,7 @@
         const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
         if (type === "v") {
           const date = new Date(year, month, day);
-          const dayOfWeek = date.getDay(); // domingo=0, lunes=1...
+          const dayOfWeek = date.getDay();
           if (dayOfWeek >= 1 && dayOfWeek <= 5) {
             const confirmWeek = confirm("¿Quieres marcar toda la semana hasta el viernes?");
             if (confirmWeek) {
@@ -184,7 +189,9 @@
                 const selector = `.month:nth-child(${month + 1}) .day`;
                 const daysInMonth = document.querySelectorAll(selector);
                 daysInMonth.forEach(div => {
-                  if (parseInt(div.textContent) === i && !isNaN(i) && !div.classList.contains("holiday")) {
+                  if (parseInt(div.textContent) === i && !isNaN(i) && 
+                      !div.classList.contains("holiday-national") &&
+                      !div.classList.contains("holiday-local")) {
                     div.classList.add("vacation");
                     div.classList.remove("medical");
                   }
