@@ -6,91 +6,25 @@
   <title>Calendario Vacaciones</title>
   <link rel="icon" href="playa.png" type="image/png" />
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 1rem;
-      background-color: #f0f8ff;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 0.5rem;
-    }
-    .counters {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 1rem;
-    }
-    .month {
-      background-color: #fff;
-      border-radius: 10px;
-      padding: 0.5rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .month h2 {
-      text-align: center;
-      margin-top: 0;
-    }
-    .days {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 3px;
-      font-size: 0.8rem;
-    }
-    .day {
-      border: 1px solid #ccc;
-      padding: 0.4rem;
-      text-align: center;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    .vacation {
-      background-color: #FFCC80;
-    }
-    .medical {
-      background-color: #90CAF9;
-    }
-    .today {
-      border: 2px solid #3f51b5;
-    }
-    .labels {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-    }
-    .labels span {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    .vacation-dot {
-      width: 1rem;
-      height: 1rem;
-      background-color: #FFCC80;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .medical-dot {
-      width: 1rem;
-      height: 1rem;
-      background-color: #90CAF9;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    @media (max-width: 600px) {
-      .days {
-        font-size: 0.7rem;
-      }
-    }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 1rem; background-color: #f0f8ff; }
+    h1 { text-align: center; margin-bottom: 0.5rem; }
+    .counters { text-align: center; margin-bottom: 1rem; }
+    .calendar { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+    .month { background-color: #fff; border-radius: 10px; padding: 0.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .month h2 { text-align: center; margin-top: 0; }
+    .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; font-size: 0.8rem; }
+    .day { border: 1px solid #ccc; padding: 0.4rem; text-align: center; cursor: pointer; border-radius: 4px; }
+    .vacation { background-color: #FFCC80; }
+    .medical { background-color: #90CAF9; }
+    .holiday { background-color: #C8E6C9; } /* Festivos */
+    .today { border: 2px solid #3f51b5; }
+    .labels { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; }
+    .labels span { display: inline-flex; align-items: center; gap: 0.3rem; }
+    .vacation-dot { width: 1rem; height: 1rem; background-color: #FFCC80; border-radius: 50%; display: inline-block; }
+    .medical-dot { width: 1rem; height: 1rem; background-color: #90CAF9; border-radius: 50%; display: inline-block; }
+    .holiday-dot { width: 1rem; height: 1rem; background-color: #C8E6C9; border-radius: 50%; display: inline-block; }
+    @media (max-width: 600px) { .days { font-size: 0.7rem; } }
   </style>
 </head>
 <body>
@@ -103,6 +37,7 @@
   <div class="labels">
     <span><span class="vacation-dot"></span> Vacaciones</span>
     <span><span class="medical-dot"></span> Médico</span>
+    <span><span class="holiday-dot"></span> Festivo</span>
   </div>
   <div class="calendar" id="calendar"></div>
 
@@ -115,10 +50,71 @@
     const remaining = document.getElementById("remaining");
 
     const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
-    const months = [
-      "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-    ];
+    const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+    // === Festivos fijos nacionales (iguales cada año) ===
+    function getFixedHolidays(year) {
+      return [
+        `${year}-1-1`,   // Año Nuevo
+        `${year}-1-6`,   // Reyes
+        `${year}-5-1`,   // Día del Trabajo
+        `${year}-8-15`,  // Asunción
+        `${year}-11-1`,  // Todos los Santos
+        `${year}-12-6`,  // Constitución
+        `${year}-12-8`,  // Inmaculada
+        `${year}-12-25`  // Navidad
+      ];
+    }
+
+    // === Cálculo de la Pascua (computus) ===
+    function getEasterSunday(year) {
+      const f = Math.floor,
+        G = year % 19,
+        C = f(year / 100),
+        H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30,
+        I = H - f(H / 28) * (1 - f(H / 28) * f(29 / (H + 1)) * f((21 - G) / 11)),
+        J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7,
+        L = I - J,
+        month = 3 + f((L + 40) / 44),
+        day = L + 28 - 31 * f(month / 4);
+      return new Date(year, month - 1, day);
+    }
+
+    // === Festivos variables nacionales: Jueves y Viernes Santo ===
+    function getEasterRelatedHolidays(year) {
+      const easter = getEasterSunday(year);
+      const thursday = new Date(easter);
+      thursday.setDate(easter.getDate() - 3); // Jueves Santo
+      const friday = new Date(easter);
+      friday.setDate(easter.getDate() - 2);   // Viernes Santo
+
+      return [
+        `${year}-${thursday.getMonth() + 1}-${thursday.getDate()}`,
+        `${year}-${friday.getMonth() + 1}-${friday.getDate()}`
+      ];
+    }
+
+    // === Festivos autonómicos/locales (manual cada año) ===
+    function getLocalHolidays(year) {
+      const holidays = [];
+      if (year === 2025) {
+        holidays.push(`${year}-4-23`); // Castilla y León
+        holidays.push(`${year}-10-6`); // San Froilán (trasladado)
+        holidays.push(`${year}-10-13`); // Traslado Fiesta Nacional
+      }
+      return holidays;
+    }
+
+    // === Generador de festivos ===
+    function getAllHolidays(year) {
+      return new Set([
+        ...getFixedHolidays(year),
+        ...getEasterRelatedHolidays(year),
+        ...getLocalHolidays(year)
+      ]);
+    }
+
+    const holidays = getAllHolidays(currentYear);
 
     function createCalendar(year) {
       calendar.innerHTML = "";
@@ -156,14 +152,18 @@
           if (dateKey === getTodayKey()) {
             dayDiv.classList.add("today");
           }
-
-          dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
+          if (holidays.has(dateKey)) {
+            dayDiv.classList.add("holiday");
+          } else {
+            dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
+          }
           daysDiv.appendChild(dayDiv);
         }
 
         monthDiv.appendChild(daysDiv);
         calendar.appendChild(monthDiv);
       }
+      updateCounters();
     }
 
     function handleDayClick(dayDiv, year, month, day) {
@@ -176,7 +176,7 @@
         const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
         if (type === "v") {
           const date = new Date(year, month, day);
-          const dayOfWeek = date.getDay(); // 0: domingo, 1: lunes, ..., 5: viernes
+          const dayOfWeek = date.getDay(); // domingo=0, lunes=1...
           if (dayOfWeek >= 1 && dayOfWeek <= 5) {
             const confirmWeek = confirm("¿Quieres marcar toda la semana hasta el viernes?");
             if (confirmWeek) {
@@ -184,7 +184,7 @@
                 const selector = `.month:nth-child(${month + 1}) .day`;
                 const daysInMonth = document.querySelectorAll(selector);
                 daysInMonth.forEach(div => {
-                  if (parseInt(div.textContent) === i && !isNaN(i)) {
+                  if (parseInt(div.textContent) === i && !isNaN(i) && !div.classList.contains("holiday")) {
                     div.classList.add("vacation");
                     div.classList.remove("medical");
                   }
