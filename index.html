@@ -85,7 +85,6 @@
       return fixed.map(f => {
         let date = new Date(year, f.month-1, f.day);
         const dayOfWeek = date.getDay();
-        if(dayOfWeek === 6) date.setDate(f.day+2); // sábado -> lunes
         if(dayOfWeek === 0) date.setDate(f.day+1); // domingo -> lunes
         return `${year}-${date.getMonth()+1}-${date.getDate()}`;
       });
