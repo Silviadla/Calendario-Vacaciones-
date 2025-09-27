@@ -67,47 +67,50 @@
     const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
     const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-    // Objeto para guardar los días marcados por año
     let yearData = {};
 
-    // Festivos nacionales fijos
+    // Festivos nacionales fijos con traslado al lunes si caen sábado o domingo
     function getFixedHolidays(year) {
-      return [`${year}-1-1`, `${year}-1-6`, `${year}-5-1`, `${year}-8-15`, `${year}-11-1`, `${year}-12-6`, `${year}-12-8`, `${year}-12-25`];
+      const fixed = [
+        { month:1, day:1 },  // Año Nuevo
+        { month:1, day:6 },  // Reyes
+        { month:5, day:1 },  // Día del Trabajador
+        { month:8, day:15 }, // Asunción
+        { month:10, day:12 },// Fiesta Nacional
+        { month:11, day:1 }, // Todos los Santos
+        { month:12, day:6 }, // Constitución
+        { month:12, day:8 }, // Inmaculada
+        { month:12, day:25 } // Navidad
+      ];
+      return fixed.map(f => {
+        let date = new Date(year, f.month-1, f.day);
+        const dayOfWeek = date.getDay();
+        if(dayOfWeek === 6) date.setDate(f.day+2); // sábado -> lunes
+        if(dayOfWeek === 0) date.setDate(f.day+1); // domingo -> lunes
+        return `${year}-${date.getMonth()+1}-${date.getDate()}`;
+      });
     }
 
-    // Pascua y festivos relacionados
     function getEasterSunday(year) {
-      const f = Math.floor,
-        G = year % 19,
-        C = f(year / 100),
-        H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30,
-        I = H - f(H / 28) * (1 - f(H / 28) * f(29 / (H + 1)) * f((21 - G) / 11)),
-        J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7,
-        L = I - J,
-        month = 3 + f((L + 40) / 44),
-        day = L + 28 - 31 * f(month / 4);
-      return new Date(year, month - 1, day);
+      const f = Math.floor, G = year % 19, C = f(year/100), H = (C-f(C/4)-f((8*C+13)/25)+19*G+15)%30,
+      I = H-f(H/28)*(1-f(H/28)*f(29/(H+1))*f((21-G)/11)), J=(year+f(year/4)+I+2-C+f(C/4))%7,
+      L = I-J, month = 3+f((L+40)/44), day = L+28-31*f(month/4);
+      return new Date(year, month-1, day);
     }
 
     function getEasterRelatedHolidays(year) {
       const easter = getEasterSunday(year);
-      const thursday = new Date(easter); thursday.setDate(easter.getDate() - 3);
-      const friday = new Date(easter); friday.setDate(easter.getDate() - 2);
+      const thursday = new Date(easter); thursday.setDate(easter.getDate()-3);
+      const friday = new Date(easter); friday.setDate(easter.getDate()-2);
       return [`${year}-${thursday.getMonth()+1}-${thursday.getDate()}`, `${year}-${friday.getMonth()+1}-${friday.getDate()}`];
     }
 
-    // Festivos locales de León capital automáticos
     function getLocalHolidays(year) {
       const holidays = [];
-      // San Juan: 24 de junio siempre
-      holidays.push(`${year}-6-24`);
-
-      // San Froilán: 5 de octubre, trasladado al lunes si cae en fin de semana
-      let sanFroilan = new Date(year, 9, 5); // octubre
-      const dayOfWeek = sanFroilan.getDay();
-      if (dayOfWeek === 0) sanFroilan.setDate(6); // domingo -> lunes siguiente
-      holidays.push(`${year}-${sanFroilan.getMonth() + 1}-${sanFroilan.getDate()}`);
-
+      holidays.push(`${year}-6-24`); // San Juan
+      let sanFroilan = new Date(year, 9, 5); // 5 octubre
+      if(sanFroilan.getDay() === 0) sanFroilan.setDate(6); // domingo -> lunes
+      holidays.push(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
       return holidays;
     }
 
@@ -134,7 +137,7 @@
 
       for (let m = 0; m < 12; m++) {
         const firstDay = new Date(year, m, 1).getDay();
-        const totalDays = new Date(year, m + 1, 0).getDate();
+        const totalDays = new Date(year, m+1, 0).getDate();
         const monthDiv = document.createElement("div");
         monthDiv.className = "month";
         const title = document.createElement("h2");
@@ -152,23 +155,22 @@
           daysDiv.appendChild(label);
         });
 
-        const startDay = (firstDay + 6) % 7;
-        for (let i = 0; i < startDay; i++) daysDiv.appendChild(document.createElement("div"));
+        const startDay = (firstDay+6)%7;
+        for(let i=0;i<startDay;i++) daysDiv.appendChild(document.createElement("div"));
 
-        for (let d = 1; d <= totalDays; d++) {
+        for(let d=1; d<=totalDays; d++) {
           const dayDiv = document.createElement("div");
           dayDiv.className = "day";
           dayDiv.textContent = d;
           const dateKey = `${year}-${m+1}-${d}`;
 
-          if (dateKey === getTodayKey()) dayDiv.classList.add("today");
-          if (nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
-          else if (localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
+          if(dateKey === getTodayKey()) dayDiv.classList.add("today");
+          if(nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
+          else if(localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
           else dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
 
-          // Restaurar días marcados
-          if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
-          if (yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
+          if(yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
+          if(yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
 
           daysDiv.appendChild(dayDiv);
         }
@@ -185,24 +187,24 @@
       const isVacation = dayDiv.classList.contains("vacation");
       const isMedical = dayDiv.classList.contains("medical");
 
-      if (isVacation || isMedical) {
+      if(isVacation || isMedical) {
         dayDiv.classList.remove("vacation","medical");
         yearData[year].vacation.delete(dateKey);
         yearData[year].medical.delete(dateKey);
       } else {
         const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
-        if (type === "v") {
+        if(type==="v") {
           const date = new Date(year, month, day);
           const dayOfWeek = date.getDay();
-          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          if(dayOfWeek>=1 && dayOfWeek<=5) {
             const confirmWeek = confirm("¿Quieres marcar toda la semana hasta el viernes?");
-            if (confirmWeek) {
-              for (let i = day; i <= day + (5 - dayOfWeek); i++) {
+            if(confirmWeek) {
+              for(let i=day; i<=day+(5-dayOfWeek); i++) {
                 const selector = `.month:nth-child(${month+1}) .day`;
                 document.querySelectorAll(selector).forEach(div => {
-                  if (parseInt(div.textContent) === i && !isNaN(i) &&
-                      !div.classList.contains("holiday-national") &&
-                      !div.classList.contains("holiday-local")) {
+                  if(parseInt(div.textContent)===i && !isNaN(i) &&
+                     !div.classList.contains("holiday-national") &&
+                     !div.classList.contains("holiday-local")) {
                     div.classList.add("vacation"); div.classList.remove("medical");
                     yearData[year].vacation.add(`${year}-${month+1}-${i}`);
                     yearData[year].medical.delete(`${year}-${month+1}-${i}`);
@@ -217,7 +219,7 @@
             dayDiv.classList.add("vacation");
             yearData[year].vacation.add(dateKey);
           }
-        } else if (type === "m") {
+        } else if(type==="m") {
           dayDiv.classList.add("medical");
           yearData[year].medical.add(dateKey);
         }
@@ -237,9 +239,9 @@
       return `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
     }
 
-    document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear - 1));
-    document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear + 1));
-    yearInput.addEventListener("change", () => createCalendar(parseInt(yearInput.value)));
+    document.getElementById("prevYear").addEventListener("click", ()=>createCalendar(currentYear-1));
+    document.getElementById("nextYear").addEventListener("click", ()=>createCalendar(currentYear+1));
+    yearInput.addEventListener("change", ()=>createCalendar(parseInt(yearInput.value)));
 
     createCalendar(currentYear);
   </script>
