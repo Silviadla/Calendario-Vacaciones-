@@ -105,7 +105,6 @@
       // San Froilán: 5 de octubre, trasladado al lunes si cae en fin de semana
       let sanFroilan = new Date(year, 9, 5); // octubre
       const dayOfWeek = sanFroilan.getDay();
-      if (dayOfWeek === 6) sanFroilan.setDate(7); // sábado -> lunes siguiente
       if (dayOfWeek === 0) sanFroilan.setDate(6); // domingo -> lunes siguiente
       holidays.push(`${year}-${sanFroilan.getMonth() + 1}-${sanFroilan.getDate()}`);
 
