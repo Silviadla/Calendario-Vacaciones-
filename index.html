@@ -111,6 +111,14 @@
       if(sanFroilan.getDay() === 0) sanFroilan.setDate(6); // domingo -> lunes
       holidays.push(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
       return holidays;
+
+       // 23 de abril: Día de Castilla y León, se pasa al lunes si cae domingo
+      let diaCyL = new Date(year, 3, 23); // abril = 3
+      if(diaCyL.getDay() === 0) diaCyL.setDate(24);
+      holidays.push(`${year}-${diaCyL.getMonth()+1}-${diaCyL.getDate()}`);
+    
+      return holidays;
+
     }
 
     function getHolidaySets(year) {
