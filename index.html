@@ -69,7 +69,7 @@
 
     let yearData = {};
 
-    // Festivos nacionales fijos con traslado al lunes si caen sábado o domingo
+    // Festivos nacionales fijos, se pasa al lunes solo si cae domingo
     function getFixedHolidays(year) {
       const fixed = [
         { month:1, day:1 },  // Año Nuevo
@@ -84,8 +84,7 @@
       ];
       return fixed.map(f => {
         let date = new Date(year, f.month-1, f.day);
-        const dayOfWeek = date.getDay();
-        if(dayOfWeek === 0) date.setDate(f.day+1); // domingo -> lunes
+        if(date.getDay() === 0) date.setDate(f.day+1); // domingo -> lunes
         return `${year}-${date.getMonth()+1}-${date.getDate()}`;
       });
     }
@@ -104,21 +103,22 @@
       return [`${year}-${thursday.getMonth()+1}-${thursday.getDate()}`, `${year}-${friday.getMonth()+1}-${friday.getDate()}`];
     }
 
+    // Festivos locales León capital
     function getLocalHolidays(year) {
       const holidays = [];
       holidays.push(`${year}-6-24`); // San Juan
-      let sanFroilan = new Date(year, 9, 5); // 5 octubre
-      if(sanFroilan.getDay() === 0) sanFroilan.setDate(6); // domingo -> lunes
-      holidays.push(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
-      return holidays;
 
-       // 23 de abril: Día de Castilla y León, se pasa al lunes si cae domingo
-      let diaCyL = new Date(year, 3, 23); // abril = 3
+      // San Froilán: 5 de octubre
+      let sanFroilan = new Date(year, 9, 5);
+      if(sanFroilan.getDay() === 0) sanFroilan.setDate(6);
+      holidays.push(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
+
+      // 23 de abril: Día de Castilla y León
+      let diaCyL = new Date(year, 3, 23);
       if(diaCyL.getDay() === 0) diaCyL.setDate(24);
       holidays.push(`${year}-${diaCyL.getMonth()+1}-${diaCyL.getDate()}`);
-    
-      return holidays;
 
+      return holidays;
     }
 
     function getHolidaySets(year) {
