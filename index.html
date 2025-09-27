@@ -96,16 +96,24 @@
       ];
     }
 
-    // === Festivos autonómicos/locales (manual cada año) ===
-    function getLocalHolidays(year) {
-      const holidays = [];
-      if (year === 2025) {
-        holidays.push(`${year}-4-23`); // Castilla y León
-        holidays.push(`${year}-10-6`); // San Froilán (trasladado)
-        holidays.push(`${year}-10-13`); // Traslado Fiesta Nacional
-      }
-      return holidays;
-    }
+   // === Festivos autonómicos/locales ===
+function getLocalHolidays(year) {
+  const holidays = [];
+
+  // Castilla y León (23 de abril)
+  holidays.push(`${year}-4-23`);
+
+  // San Froilán (siempre 5 de octubre en León capital)
+  holidays.push(`${year}-10-5`);
+
+  // Aquí puedes añadir traslados o festivos especiales de un año concreto
+  if (year === 2025) {
+    holidays.push(`${year}-10-13`); // Traslado Fiesta Nacional 2025
+  }
+
+  return holidays;
+}
+
 
     // === Generador de festivos separados ===
     function getHolidaySets(year) {
