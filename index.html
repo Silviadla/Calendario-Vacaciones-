@@ -67,6 +67,9 @@
     const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
     const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
+    // Objeto para guardar los días marcados por año
+    let yearData = {};
+
     function getFixedHolidays(year) {
       return [`${year}-1-1`, `${year}-1-6`, `${year}-5-1`, `${year}-8-15`, `${year}-11-1`, `${year}-12-6`, `${year}-12-8`, `${year}-12-25`];
     }
@@ -109,9 +112,13 @@
     function createCalendar(year) {
       currentYear = year;
       yearInput.value = year;
+
       const holidays = getHolidaySets(year);
       nationalHolidays = holidays.national;
       localHolidays = holidays.local;
+
+      // Inicializar datos del año si no existen
+      if (!yearData[year]) yearData[year] = { vacation: new Set(), medical: new Set() };
 
       calendar.innerHTML = "";
 
@@ -143,25 +150,38 @@
           dayDiv.className = "day";
           dayDiv.textContent = d;
           const dateKey = `${year}-${m+1}-${d}`;
+
           if (dateKey === getTodayKey()) dayDiv.classList.add("today");
           if (nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
           else if (localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
-          else dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
+          else {
+            dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
+          }
+
+          // Restaurar clases desde yearData
+          if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
+          if (yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
+
           daysDiv.appendChild(dayDiv);
         }
 
         monthDiv.appendChild(daysDiv);
         calendar.appendChild(monthDiv);
       }
+
       updateCounters();
     }
 
     function handleDayClick(dayDiv, year, month, day) {
+      const dateKey = `${year}-${month+1}-${day}`;
       const isVacation = dayDiv.classList.contains("vacation");
       const isMedical = dayDiv.classList.contains("medical");
 
-      if (isVacation || isMedical) { dayDiv.classList.remove("vacation","medical"); }
-      else {
+      if (isVacation || isMedical) {
+        dayDiv.classList.remove("vacation","medical");
+        yearData[year].vacation.delete(dateKey);
+        yearData[year].medical.delete(dateKey);
+      } else {
         const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
         if (type === "v") {
           const date = new Date(year, month, day);
@@ -172,29 +192,36 @@
               for (let i = day; i <= day + (5 - dayOfWeek); i++) {
                 const selector = `.month:nth-child(${month+1}) .day`;
                 document.querySelectorAll(selector).forEach(div => {
-                  if (parseInt(div.textContent) === i && !isNaN(i) && !div.classList.contains("holiday-national") && !div.classList.contains("holiday-local")) {
+                  if (parseInt(div.textContent) === i && !isNaN(i) &&
+                      !div.classList.contains("holiday-national") &&
+                      !div.classList.contains("holiday-local")) {
                     div.classList.add("vacation"); div.classList.remove("medical");
+                    yearData[year].vacation.add(`${year}-${month+1}-${i}`);
+                    yearData[year].medical.delete(`${year}-${month+1}-${i}`);
                   }
                 });
               }
-            } else dayDiv.classList.add("vacation");
-          } else dayDiv.classList.add("vacation");
-        } else if (type === "m") dayDiv.classList.add("medical");
+            } else {
+              dayDiv.classList.add("vacation");
+              yearData[year].vacation.add(dateKey);
+            }
+          } else {
+            dayDiv.classList.add("vacation");
+            yearData[year].vacation.add(dateKey);
+          }
+        } else if (type === "m") {
+          dayDiv.classList.add("medical");
+          yearData[year].medical.add(dateKey);
+        }
       }
       updateCounters();
     }
 
     function updateCounters() {
-      let vacationDays = 0, medicalDays = 0;
-      document.querySelectorAll(".day").forEach(div => {
-        if (!isNaN(parseInt(div.textContent))) {
-          if (div.classList.contains("vacation")) vacationDays++;
-          if (div.classList.contains("medical")) medicalDays++;
-        }
-      });
-      vacationCount.textContent = "Días de vacaciones usados: " + vacationDays;
-      medicalCount.textContent = "Días médicos: " + medicalDays;
-      remaining.textContent = "Vacaciones restantes: " + (vacationLimit - vacationDays);
+      const data = yearData[currentYear];
+      vacationCount.textContent = "Días de vacaciones usados: " + data.vacation.size;
+      medicalCount.textContent = "Días médicos: " + data.medical.size;
+      remaining.textContent = "Vacaciones restantes: " + (vacationLimit - data.vacation.size);
     }
 
     function getTodayKey() {
