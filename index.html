@@ -1,1 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calendario Vacaciones</title>
+  <link rel="icon" href="playa.png" type="image/png" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 1rem; background-color: #f0f8ff; }
+    h1 { text-align: center; margin-bottom: 0.5rem; }
+    .counters { text-align: center; margin-bottom: 1rem; }
+    .calendar { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+    .month { background-color: #fff; border-radius: 10px; padding: 0.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .month h2 { text-align: center; margin-top: 0; }
+    .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; font-size: 0.8rem; }
+    .day { border: 1px solid #ccc; padding: 0.4rem; text-align: center; cursor: pointer; border-radius: 4px; }
+    .vacation { background-color: #FFCC80; }
+    .medical { background-color: #90CAF9; }
+    .holiday-national { background-color: #F28B82; } /* Festivos nacionales en rojo suave */
+    .holiday-local { background-color: #E1BEE7; }    /* Festivos locales en magenta */
+    .today { border: 2px solid #3f51b5; }
+    .labels { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; flex-wrap: wrap; }
+    .labels span { display: inline-flex; align-items: center; gap: 0.3rem; }
+    .vacation-dot { width: 1rem; height: 1rem; background-color: #FFCC80; border-radius: 50%; display: inline-block; }
+    .medical-dot { width: 1rem; height: 1rem; background-color: #90CAF9; border-radius: 50%; display: inline-block; }
+    .holiday-national-dot { width: 1rem; height: 1rem; background-color: #F28B82; border-radius: 50%; display: inline-block; }
+    .holiday-local-dot { width: 1rem; height: 1rem; background-color: #E1BEE7; border-radius: 50%; display: inline-block; }
+    @media (max-width: 600px) { .days { font-size: 0.7rem; } }
+  </style>
+</head>
+<body>
+  <h1>Calendario Vacaciones</h1>
+  <div class="counters">
+    <p id="vacationCount">Días de vacaciones usados: 0</p>
+    <p id="medicalCount">Días médicos: 0</p>
+    <p id="remaining">Vacaciones restantes: 23</p>
+  </div>
+  <div class="labels">
+    <span><span class="vacation-dot"></span> Vacaciones</span>
+    <span><span class="medical-dot"></span> Médico</span>
+    <span><span class="holiday-national-dot"></span> Festivo Nacional</span>
+    <span><span class="holiday-local-dot"></span> Festivo Local</span>
+  </div>
+  <div class="calendar" id="calendar"></div>
+
+  <script>
+    const calendar = document.getElementById("calendar");
+    const currentYear = new Date().getFullYear();
+    const vacationLimit = 23;
+    const vacationCount = document.getElementById("vacationCount");
+    const medicalCount = document.getElementById("medicalCount");
+    const remaining = document.getElementById("remaining");
+
+    const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
+    const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+    // === Festivos fijos nacionales (iguales cada año) ===
+    function getFixedHolidays(year) {
+      return [
+        `${year}-1-1`,   // Año Nuevo
+        `${year}-1-6`,   // Reyes
+        `${year}-5-1`,   // Día del Trabajo
+        `${year}-8-15`,  // Asunción
+        `${year}-11-1`,  // Todos los Santos
+        `${year}-12-6`,  // Constitución
+        `${year}-12-8`,  // Inmaculada
+        `${year}-12-25`  // Navidad
+      ];
+    }
+
+    // === Cálculo de la Pascua (computus) ===
+    function getEasterSunday(year) {
+      const f = Math.floor,
+        G = year % 19,
+        C = f(year / 100),
+        H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30,
+        I = H - f(H / 28) * (1 - f(H / 28) * f(29 / (H + 1)) * f((21 - G) / 11)),
+        J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7,
+        L = I - J,
+        month = 3 + f((L + 40) / 44),
+        day = L + 28 - 31 * f(month / 4);
+      return new Date(year, month - 1, day);
+    }
+
+    // === Festivos variables nacionales: Jueves y Viernes Santo ===
+    function getEasterRelatedHolidays(year) {
+      const easter = getEasterSunday(year);
+      const thursday = new Date(easter);
+      thursday.setDate(easter.getDate() - 3); // Jueves Santo
+      const friday = new Date(easter);
+      friday.setDate(easter.getDate() - 2);   // Viernes Santo
+      return [
+        `${year}-${thursday.getMonth() + 1}-${thursday.getDate()}`,
+        `${year}-${friday.getMonth() + 1}-${friday.getDate()}`
+      ];
+    }
+
+    // === Festivos autonómicos/locales (manual cada año) ===
+    function getLocalHolidays(year) {
+      const holidays = [];
+      if (year === 2025) {
+        holidays.push(`${year}-4-23`); // Castilla y León
+        holidays.push(`${year}-10-6`); // San Froilán (trasladado)
+        holidays.push(`${year}-10-13`); // Traslado Fiesta Nacional
+      }
+      return holidays;
+    }
+
+    // === Generador de festivos separados ===
+    function getHolidaySets(year) {
+      const national = new Set([
+        ...getFixedHolidays(year),
+        ...getEasterRelatedHolidays(year)
+      ]);
+      const local = new Set(getLocalHolidays(year));
+      return { national, local };
+    }
+
+    const { national: nationalHolidays, local: localHolidays } = getHolidaySets(currentYear);
+
+    function createCalendar(year) {
+      calendar.innerHTML = "";
+      for (let m = 0; m < 12; m++) {
+        const firstDay = new Date(year, m, 1).getDay();
+        const totalDays = new Date(year, m + 1, 0).getDate();
+        const monthDiv = document.createElement("div");
+        monthDiv.className = "month";
+        const title = document.createElement("h2");
+        title.textContent = months[m];
+        monthDiv.appendChild(title);
+
+        const daysDiv = document.createElement("div");
+        daysDiv.className = "days";
+
+        dayNames.forEach(d => {
+          const label = document.createElement("div");
+          label.className = "day";
+          label.style.fontWeight = "bold";
+          label.textContent = d;
+          daysDiv.appendChild(label);
+        });
+
+        const startDay = (firstDay + 6) % 7;
+        for (let i = 0; i < startDay; i++) {
+          const empty = document.createElement("div");
+          daysDiv.appendChild(empty);
+        }
+
+        for (let d = 1; d <= totalDays; d++) {
+          const dayDiv = document.createElement("div");
+          dayDiv.className = "day";
+          dayDiv.textContent = d;
+          const dateKey = `${year}-${m + 1}-${d}`;
+          if (dateKey === getTodayKey()) {
+            dayDiv.classList.add("today");
+          }
+          if (nationalHolidays.has(dateKey)) {
+            dayDiv.classList.add("holiday-national");
+          } else if (localHolidays.has(dateKey)) {
+            dayDiv.classList.add("holiday-local");
+          } else {
+            dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
+          }
+          daysDiv.appendChild(dayDiv);
+        }
+
+        monthDiv.appendChild(daysDiv);
+        calendar.appendChild(monthDiv);
+      }
+      updateCounters();
+    }
+
+    function handleDayClick(dayDiv, year, month, day) {
+      const isVacation = dayDiv.classList.contains("vacation");
+      const isMedical = dayDiv.classList.contains("medical");
+
+      if (isVacation || isMedical) {
+        dayDiv.classList.remove("vacation", "medical");
+      } else {
+        const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
+        if (type === "v") {
+          const date = new Date(year, month, day);
+          const dayOfWeek = date.getDay();
+          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            const confirmWeek = confirm("¿Quieres marcar toda la semana hasta el viernes?");
+            if (confirmWeek) {
+              for (let i = day; i <= day + (5 - dayOfWeek); i++) {
+                const selector = `.month:nth-child(${month + 1}) .day`;
+                const daysInMonth = document.querySelectorAll(selector);
+                daysInMonth.forEach(div => {
+                  if (parseInt(div.textContent) === i && !isNaN(i) && 
+                      !div.classList.contains("holiday-national") &&
+                      !div.classList.contains("holiday-local")) {
+                    div.classList.add("vacation");
+                    div.classList.remove("medical");
+                  }
+                });
+              }
+            } else {
+              dayDiv.classList.add("vacation");
+            }
+          } else {
+            dayDiv.classList.add("vacation");
+          }
+        } else if (type === "m") {
+          dayDiv.classList.add("medical");
+        }
+      }
+      updateCounters();
+    }
+
+    function updateCounters() {
+      let vacationDays = 0;
+      let medicalDays = 0;
+      const allDays = document.querySelectorAll(".day");
+
+      allDays.forEach((div) => {
+        const parentMonth = div.closest(".month");
+        const monthIndex = Array.from(calendar.children).indexOf(parentMonth);
+        const day = parseInt(div.textContent);
+        if (!isNaN(day)) {
+          const date = new Date(currentYear, monthIndex, day);
+          if (date.getFullYear() === currentYear) {
+            if (div.classList.contains("vacation")) vacationDays++;
+            if (div.classList.contains("medical")) medicalDays++;
+          }
+        }
+      });
+
+      vacationCount.textContent = "Días de vacaciones usados: " + vacationDays;
+      medicalCount.textContent = "Días médicos: " + medicalDays;
+      remaining.textContent = "Vacaciones restantes: " + (vacationLimit - vacationDays);
+    }
+
+    function getTodayKey() {
+      const today = new Date();
+      return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+    }
+
+    createCalendar(currentYear);
+  </script>
+</body>
+</html>
 
