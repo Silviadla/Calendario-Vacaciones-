@@ -1,589 +1,242 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Calendario Vacaciones</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 1rem;
-            background-color: #f0f8ff;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 0.5rem;
-        }
-        .config-panel {
-            background-color: #fff;
-            padding: 1rem;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .config-row {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .year-selector {
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .counters {
-            text-align: center;
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            flex-wrap: wrap;
-        }
-        .counter-box {
-            background-color: #fff;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            min-width: 180px;
-        }
-        .calendar {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-        .month {
-            background-color: #fff;
-            border-radius: 10px;
-            padding: 0.5rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .month h2 {
-            text-align: center;
-            margin-top: 0;
-        }
-        .days {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 3px;
-            font-size: 0.8rem;
-        }
-        .day {
-            border: 1px solid #ccc;
-            padding: 0.4rem;
-            text-align: center;
-            cursor: pointer;
-            border-radius: 4px;
-            min-height: 30px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .vacation {
-            background-color: #FFCC80;
-        }
-        .vacation-previous {
-            background-color: #FFA726;
-        }
-        .medical {
-            background-color: #90CAF9;
-        }
-        .holiday-national {
-            background-color: #F28B82;
-        }
-        .holiday-local {
-            background-color: #E1BEE7;
-        }
-        .weekend {
-            background-color: #EEEEEE;
-        }
-        .today {
-            border: 2px solid #3f51b5;
-        }
-        .labels {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            flex-wrap: wrap;
-        }
-        .labels span {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-        .vacation-dot, .vacation-previous-dot, .medical-dot, .holiday-national-dot, .holiday-local-dot, .weekend-dot {
-            width: 1rem;
-            height: 1rem;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        .vacation-dot {
-            background-color: #FFCC80;
-        }
-        .vacation-previous-dot {
-            background-color: #FFA726;
-        }
-        .medical-dot {
-            background-color: #90CAF9;
-        }
-        .holiday-national-dot {
-            background-color: #F28B82;
-        }
-        .holiday-local-dot {
-            background-color: #E1BEE7;
-        }
-        .weekend-dot {
-            background-color: #EEEEEE;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        input[type="number"] {
-            width: 60px;
-            padding: 0.3rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .auto-calculation-info {
-            background-color: #e8f5e9;
-            padding: 0.5rem;
-            border-radius: 4px;
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-        }
-        @media (max-width: 600px) {
-            .days {
-                font-size: 0.7rem;
-            }
-            .counters {
-                flex-direction: column;
-                align-items: center;
-            }
-            .config-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calendario Vacaciones</title>
+<link rel="icon" href="playa.png" type="image/png" />
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; margin:0; padding:1rem; background-color:#f0f8ff; }
+  h1 { text-align:center; margin-bottom:0.5rem; }
+  .year-selector { text-align:center; margin-bottom:1rem; }
+  .counters { text-align:center; margin-bottom:1rem; }
+  .calendar { display:grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr)); gap:1rem; }
+  .month { background-color:#fff; border-radius:10px; padding:0.5rem; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+  .month h2 { text-align:center; margin-top:0; }
+  .days { display:grid; grid-template-columns: repeat(7,1fr); gap:3px; font-size:0.8rem; }
+  .day { border:1px solid #ccc; padding:0.4rem; text-align:center; cursor:pointer; border-radius:4px; }
+  .vacation { background-color:#FFCC80; }
+  .vacation-prev { background-color:#FFD700; font-weight:bold; } /* vacaciones año anterior */
+  .medical { background-color:#90CAF9; }
+  .holiday-national { background-color:#F28B82; }
+  .holiday-local { background-color:#E1BEE7; }
+  .weekend { background-color:#EEEEEE; }
+  .today { border:2px solid #3f51b5; }
+  .labels { display:flex; justify-content:center; gap:1rem; margin-bottom:1rem; font-size:0.9rem; flex-wrap:wrap; }
+  .labels span { display:inline-flex; align-items:center; gap:0.3rem; }
+  .vacation-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#FFCC80; }
+  .vacation-prev-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#FFD700; }
+  .medical-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#90CAF9; }
+  .holiday-national-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#F28B82; }
+  .holiday-local-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#E1BEE7; }
+  .weekend-dot { width:1rem; height:1rem; border-radius:50%; display:inline-block; background-color:#EEEEEE; }
+  @media (max-width:600px){ .days{ font-size:0.7rem; } }
+</style>
 </head>
 <body>
-    <h1>Calendario Vacaciones</h1>
-    
-    <div class="config-panel">
-        <h3>Configuración de Vacaciones</h3>
-        <div class="config-row">
-            <label>Días de vacaciones del año actual:</label>
-            <input type="number" id="vacationCurrentInput" value="23" min="0" max="365">
-        </div>
-        <div class="config-row">
-            <label>Días de vacaciones del año anterior disponibles:</label>
-            <input type="number" id="vacationPreviousInput" value="0" min="0" max="365" readonly>
-            <span style="color: #666;">(Calculado automáticamente)</span>
-        </div>
-        <div class="auto-calculation-info">
-            <strong>Información:</strong> Los días del año anterior se calculan automáticamente como los días no utilizados del año actual anterior.
-        </div>
-    </div>
-    
-    <div class="year-selector">
-        <button id="prevYear">« Año anterior</button>
-        <input type="number" id="yearInput" value="2025" min="2000" max="2100" style="width:80px; text-align:center;">
-        <button id="nextYear">Año siguiente »</button>
-    </div>
-    
-    <div class="counters">
-        <div class="counter-box">
-            <p id="vacationCount">Días de vacaciones usados: 0</p>
-            <p id="vacationPreviousCount">Días del año anterior usados: 0</p>
-        </div>
-        <div class="counter-box">
-            <p id="medicalCount">Días médicos: 0</p>
-            <p id="remaining">Vacaciones restantes: 23</p>
-            <p id="remainingPrevious">Vacaciones del año anterior restantes: 0</p>
-        </div>
-    </div>
-    
-    <div class="labels">
-        <span><span class="vacation-dot"></span> Vacaciones año actual</span>
-        <span><span class="vacation-previous-dot"></span> Vacaciones año anterior</span>
-        <span><span class="medical-dot"></span> Médico</span>
-        <span><span class="holiday-national-dot"></span> Festivo Nacional</span>
-        <span><span class="holiday-local-dot"></span> Festivo Local</span>
-        <span><span class="weekend-dot"></span> Fin de semana</span>
-    </div>
-    
-    <div class="calendar" id="calendar"></div>
+<h1>Calendario Vacaciones</h1>
 
-    <script>
-        let currentYear = new Date().getFullYear();
-        let vacationLimitCurrent = 23;
-        
-        // Elementos de la configuración
-        const vacationCurrentInput = document.getElementById("vacationCurrentInput");
-        const vacationPreviousInput = document.getElementById("vacationPreviousInput");
-        
-        // Elementos de contadores
-        const vacationCount = document.getElementById("vacationCount");
-        const vacationPreviousCount = document.getElementById("vacationPreviousCount");
-        const medicalCount = document.getElementById("medicalCount");
-        const remaining = document.getElementById("remaining");
-        const remainingPrevious = document.getElementById("remainingPrevious");
-        const yearInput = document.getElementById("yearInput");
-        const calendar = document.getElementById("calendar");
-        
-        const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
-        const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-        
-        // Datos de vacaciones por año
-        let yearData = {
-            // Ejemplo: datos del año 2024
-            2024: {
-                vacation: new Set(["2024-7-15", "2024-7-16", "2024-7-17", "2024-7-18", "2024-7-19"]),
-                medical: new Set(["2024-3-5"]),
-                limit: 23
-            },
-            // Datos del año actual (2025)
-            2025: {
-                vacation: new Set(),
-                vacationPrevious: new Set(),
-                medical: new Set(),
-                limit: vacationLimitCurrent
-            }
-        };
-        
-        // Función para calcular automáticamente los días del año anterior disponibles
-        function calculatePreviousYearDays(year) {
-            const previousYear = year - 1;
-            
-            // Si no hay datos para el año anterior, no hay días disponibles
-            if (!yearData[previousYear]) {
-                return 0;
-            }
-            
-            const previousYearData = yearData[previousYear];
-            const daysUsed = previousYearData.vacation.size;
-            const daysAvailable = previousYearData.limit;
-            
-            // Los días disponibles del año anterior son los que no se usaron
-            const remainingDays = Math.max(0, daysAvailable - daysUsed);
-            
-            // Aplicar la regla del 30% (redondeando hacia abajo)
-            const maxTransferable = Math.floor(daysAvailable * 0.3);
-            const transferableDays = Math.min(remainingDays, maxTransferable);
-            
-            return transferableDays;
-        }
-        
-        // Función para obtener días festivos nacionales
-        function getFixedHolidays(year) {
-            const fixed = [
-                { month:1, day:1 }, // Año Nuevo
-                { month:1, day:6 }, // Reyes
-                { month:5, day:1 }, // Día del Trabajador
-                { month:8, day:15 }, // Asunción
-                { month:10, day:12 }, // Fiesta Nacional
-                { month:11, day:1 }, // Todos los Santos
-                { month:12, day:6 }, // Constitución
-                { month:12, day:8 }, // Inmaculada
-                { month:12, day:25 } // Navidad
-            ];
-            
-            return fixed.map(f => {
-                let date = new Date(year, f.month-1, f.day);
-                if(f.month === 10 && f.day === 12 && date.getDay() === 0) 
-                    date.setDate(13);
-                return `${year}-${date.getMonth()+1}-${date.getDate()}`;
-            });
-        }
-        
-        // Función para calcular el Domingo de Pascua
-        function getEasterSunday(year) {
-            const f = Math.floor,
-                G = year % 19,
-                C = f(year/100),
-                H = (C-f(C/4)-f((8*C+13)/25)+19*G+15)%30,
-                I = H-f(H/28)*(1-f(H/28)*f(29/(H+1))*f((21-G)/11)),
-                J = (year+f(year/4)+I+2-C+f(C/4))%7,
-                L = I-J,
-                month = 3+f((L+40)/44),
-                day = L+28-31*f(month/4);
-            return new Date(year, month-1, day);
-        }
-        
-        // Función para obtener festivos relacionados con la Pascua
-        function getEasterRelatedHolidays(year) {
-            const easter = getEasterSunday(year);
-            const thursday = new Date(easter);
-            thursday.setDate(easter.getDate()-3);
-            const friday = new Date(easter);
-            friday.setDate(easter.getDate()-2);
-            
-            return [
-                `${year}-${thursday.getMonth()+1}-${thursday.getDate()}`,
-                `${year}-${friday.getMonth()+1}-${friday.getDate()}`
-            ];
-        }
-        
-        // Función para obtener festivos locales
-        function getLocalHolidays(year) {
-            const holidays = [];
-            holidays.push(`${year}-6-24`); // San Juan
-            
-            let sanFroilan = new Date(year, 9, 5);
-            if(sanFroilan.getDay() === 0) sanFroilan.setDate(6);
-            holidays.push(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
-            
-            let diaCastilla = new Date(year, 3, 23); // 23 abril
-            holidays.push(`${year}-${diaCastilla.getMonth()+1}-${diaCastilla.getDate()}`);
-            
-            return holidays;
-        }
-        
-        // Función para obtener todos los festivos
-        function getHolidaySets(year) {
-            return {
-                national: new Set([...getFixedHolidays(year), ...getEasterRelatedHolidays(year)]),
-                local: new Set(getLocalHolidays(year))
-            };
-        }
-        
-        let { national: nationalHolidays, local: localHolidays } = getHolidaySets(currentYear);
-        
-        // Función principal para crear el calendario
-        function createCalendar(year) {
-            currentYear = year;
-            yearInput.value = year;
-            
-            // Actualizar los inputs de configuración según el año
-            vacationCurrentInput.value = vacationLimitCurrent;
-            
-            // Calcular automáticamente los días del año anterior
-            const previousYearDays = calculatePreviousYearDays(year);
-            vacationPreviousInput.value = previousYearDays;
-            
-            const holidays = getHolidaySets(year);
-            nationalHolidays = holidays.national;
-            localHolidays = holidays.local;
-            
-            if(!yearData[year]) {
-                yearData[year] = {
-                    vacation: new Set(),
-                    vacationPrevious: new Set(),
-                    medical: new Set(),
-                    limit: vacationLimitCurrent
-                };
-            }
-            
-            calendar.innerHTML = "";
-            
-            for(let m=0; m<12; m++) {
-                const firstDay = new Date(year, m, 1).getDay();
-                const totalDays = new Date(year, m+1, 0).getDate();
-                
-                const monthDiv = document.createElement("div");
-                monthDiv.className = "month";
-                
-                const title = document.createElement("h2");
-                title.textContent = months[m];
-                monthDiv.appendChild(title);
-                
-                const daysDiv = document.createElement("div");
-                daysDiv.className = "days";
-                
-                dayNames.forEach(d => {
-                    const label = document.createElement("div");
-                    label.className = "day";
-                    label.style.fontWeight = "bold";
-                    label.textContent = d;
-                    daysDiv.appendChild(label);
-                });
-                
-                const startDay = (firstDay+6)%7;
-                for(let i=0; i<startDay; i++) {
-                    daysDiv.appendChild(document.createElement("div"));
-                }
-                
-                for(let d=1; d<=totalDays; d++) {
-                    const dayDiv = document.createElement("div");
-                    dayDiv.className = "day";
-                    dayDiv.textContent = d;
-                    
-                    const dateKey = `${year}-${m+1}-${d}`;
-                    const dayOfWeek = new Date(year, m, d).getDay();
-                    
-                    if(dateKey === getTodayKey()) dayDiv.classList.add("today");
-                    
-                    if(nationalHolidays.has(dateKey)) {
-                        dayDiv.classList.add("holiday-national");
-                    } else if(localHolidays.has(dateKey)) {
-                        dayDiv.classList.add("holiday-local");
-                    } else if(dayOfWeek === 0 || dayOfWeek === 6) {
-                        dayDiv.classList.add("weekend");
-                    } else {
-                        dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
-                    }
-                    
-                    if(yearData[year].vacation.has(dateKey)) {
-                        dayDiv.classList.add("vacation");
-                    } else if(yearData[year].vacationPrevious.has(dateKey)) {
-                        dayDiv.classList.add("vacation-previous");
-                    }
-                    
-                    if(yearData[year].medical.has(dateKey)) {
-                        dayDiv.classList.add("medical");
-                    }
-                    
-                    daysDiv.appendChild(dayDiv);
-                }
-                
-                monthDiv.appendChild(daysDiv);
-                calendar.appendChild(monthDiv);
-            }
-            
-            updateCounters();
-        }
-        
-        // Función para manejar clics en días
-        function handleDayClick(dayDiv, year, month, day) {
-            const dateKey = `${year}-${month+1}-${day}`;
-            const isVacation = dayDiv.classList.contains("vacation");
-            const isVacationPrevious = dayDiv.classList.contains("vacation-previous");
-            const isMedical = dayDiv.classList.contains("medical");
-            
-            if(isVacation || isVacationPrevious || isMedical) {
-                dayDiv.classList.remove("vacation", "vacation-previous", "medical");
-                yearData[year].vacation.delete(dateKey);
-                yearData[year].vacationPrevious.delete(dateKey);
-                yearData[year].medical.delete(dateKey);
-            } else {
-                // Solo permitir usar vacaciones del año anterior en el año siguiente
-                const options = year <= currentYear - 1 ? 
-                    "v = vacaciones año actual, m = médico" : 
-                    "v = vacaciones año actual, a = vacaciones año anterior, m = médico";
-                
-                const type = prompt(`¿Qué quieres marcar? (${options})`).toLowerCase();
-                
-                if(type === "v" || type === "a") {
-                    // Solo permitir 'a' (vacaciones año anterior) si estamos en el año siguiente
-                    if (type === "a" && year <= currentYear - 1) {
-                        alert("No puedes usar vacaciones del año anterior en años pasados. Usa esta opción en el año siguiente al que corresponden las vacaciones.");
-                        return;
-                    }
-                    
-                    const date = new Date(year, month, day);
-                    const dayOfWeek = date.getDay();
-                    
-                    if(dayOfWeek >= 1 && dayOfWeek <= 5) {
-                        const confirmWeek = confirm("¿Quieres marcar toda la semana hasta el viernes?");
-                        
-                        if(confirmWeek) {
-                            for(let i=day; i<=day+(5-dayOfWeek); i++) {
-                                const weekDateKey = `${year}-${month+1}-${i}`;
-                                const selector = `.month:nth-child(${month+1}) .day`;
-                                
-                                document.querySelectorAll(selector).forEach(div => {
-                                    if(parseInt(div.textContent) === i && !isNaN(i) && 
-                                       !div.classList.contains("holiday-national") && 
-                                       !div.classList.contains("holiday-local")) {
-                                       
-                                        if(type === "v") {
-                                            div.classList.add("vacation");
-                                            yearData[year].vacation.add(weekDateKey);
-                                        } else {
-                                            div.classList.add("vacation-previous");
-                                            yearData[year].vacationPrevious.add(weekDateKey);
-                                        }
-                                        
-                                        div.classList.remove("medical");
-                                        yearData[year].medical.delete(weekDateKey);
-                                    }
-                                });
-                            }
-                        } else {
-                            if(type === "v") {
-                                dayDiv.classList.add("vacation");
-                                yearData[year].vacation.add(dateKey);
-                            } else {
-                                dayDiv.classList.add("vacation-previous");
-                                yearData[year].vacationPrevious.add(dateKey);
-                            }
-                        }
-                    } else {
-                        if(type === "v") {
-                            dayDiv.classList.add("vacation");
-                            yearData[year].vacation.add(dateKey);
-                        } else {
-                            dayDiv.classList.add("vacation-previous");
-                            yearData[year].vacationPrevious.add(dateKey);
-                        }
-                    }
-                } else if(type === "m") {
-                    dayDiv.classList.add("medical");
-                    yearData[year].medical.add(dateKey);
-                }
-            }
-            
-            updateCounters();
-        }
-        
-        // Función para actualizar contadores
-        function updateCounters() {
-            const data = yearData[currentYear];
-            const previousYearDays = calculatePreviousYearDays(currentYear);
-            
-            const vacationUsed = data.vacation.size;
-            const vacationPreviousUsed = data.vacationPrevious.size;
-            const medicalUsed = data.medical.size;
-            
-            const vacationRemaining = vacationLimitCurrent - vacationUsed;
-            const vacationPreviousRemaining = Math.max(0, previousYearDays - vacationPreviousUsed);
-            
-            vacationCount.textContent = `Días de vacaciones usados: ${vacationUsed}`;
-            vacationPreviousCount.textContent = `Días del año anterior usados: ${vacationPreviousUsed}`;
-            medicalCount.textContent = `Días médicos: ${medicalUsed}`;
-            remaining.textContent = `Vacaciones restantes: ${vacationRemaining}`;
-            remainingPrevious.textContent = `Vacaciones del año anterior restantes: ${vacationPreviousRemaining}`;
-            
-            // Actualizar también el campo de configuración
-            vacationPreviousInput.value = previousYearDays;
-        }
-        
-        // Función para obtener la fecha actual en formato clave
-        function getTodayKey() {
-            const today = new Date();
-            return `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-        }
-        
-        // Event listeners para navegación entre años
-        document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear-1));
-        document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear+1));
-        yearInput.addEventListener("change", () => createCalendar(parseInt(yearInput.value)));
-        
-        // Actualizar límite cuando cambia el input
-        vacationCurrentInput.addEventListener("change", function() {
-            vacationLimitCurrent = parseInt(this.value) || 23;
-            if (yearData[currentYear]) {
-                yearData[currentYear].limit = vacationLimitCurrent;
-            }
-            updateCounters();
-        });
-        
-        // Inicializar calendario
-        createCalendar(currentYear);
-    </script>
+<div class="year-selector">
+  <button id="prevYear">« Año anterior</button>
+  <input type="number" id="yearInput" value="2025" min="2000" max="2100" style="width:80px; text-align:center;">
+  <button id="nextYear">Año siguiente »</button>
+</div>
+
+<div class="counters">
+  <p id="vacationCount">Días de vacaciones usados: 0</p>
+  <p id="vacationPrevCount">Días de vacaciones año anterior: 0</p>
+  <p id="medicalCount">Días médicos: 0</p>
+  <p id="remaining">Vacaciones restantes: 23</p>
+</div>
+
+<div class="labels">
+  <span><span class="vacation-dot"></span> Vacaciones</span>
+  <span><span class="vacation-prev-dot"></span> Vacaciones año anterior (AN)</span>
+  <span><span class="medical-dot"></span> Médico</span>
+  <span><span class="holiday-national-dot"></span> Festivo Nacional</span>
+  <span><span class="holiday-local-dot"></span> Festivo Local</span>
+  <span><span class="weekend-dot"></span> Fin de semana</span>
+</div>
+
+<div class="calendar" id="calendar"></div>
+
+<script>
+let currentYear = new Date().getFullYear();
+const vacationLimit = 23;
+const vacationCount = document.getElementById("vacationCount");
+const vacationPrevCount = document.getElementById("vacationPrevCount");
+const medicalCount = document.getElementById("medicalCount");
+const remaining = document.getElementById("remaining");
+const yearInput = document.getElementById("yearInput");
+const calendar = document.getElementById("calendar");
+
+const dayNames = ["L","M","X","J","V","S","D"];
+const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+let yearData = {};    // días usados por año
+let carryOver = {};   // días sobrantes de años anteriores
+
+// --- HOLIDAYS ---
+function getFixedHolidays(year){
+  const fixed = [
+    {month:1,day:1},{month:1,day:6},{month:5,day:1},
+    {month:8,day:15},{month:10,day:12},{month:11,day:1},
+    {month:12,day:6},{month:12,day:8},{month:12,day:25}
+  ];
+  return fixed.map(f=>{
+    let date=new Date(year,f.month-1,f.day);
+    if(f.month===10 && f.day===12 && date.getDay()===0) date.setDate(13);
+    return `${year}-${date.getMonth()+1}-${date.getDate()}`;
+  });
+}
+
+function getEasterSunday(year){
+  const f=Math.floor,G=year%19,C=f(year/100),H=(C-f(C/4)-f((8*C+13)/25)+19*G+15)%30,
+  I=H-f(H/28)*(1-f(H/28)*f(29/(H+1))*f((21-G)/11)),J=(year+f(year/4)+I+2-C+f(C/4))%7,
+  L=I-J,month=3+f((L+40)/44),day=L+28-31*f(month/4);
+  return new Date(year,month-1,day);
+}
+
+function getEasterRelatedHolidays(year){
+  const easter=getEasterSunday(year);
+  const thursday=new Date(easter); thursday.setDate(easter.getDate()-3);
+  const friday=new Date(easter); friday.setDate(easter.getDate()-2);
+  return [`${year}-${thursday.getMonth()+1}-${thursday.getDate()}`,`${year}-${friday.getMonth()+1}-${friday.getDate()}`];
+}
+
+function getLocalHolidays(year){
+  const holidays=[];
+  holidays.push(`${year}-6-24`);
+  let sanFroilan=new Date(year,9,5);
+  if(sanFroilan.getDay()===0) sanFroilan.setDate(6);
+  holidays.push(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
+  holidays.push(`${year}-4-23`);
+  return holidays;
+}
+
+function getHolidaySets(year){
+  return { national:new Set([...getFixedHolidays(year),...getEasterRelatedHolidays(year)]),
+           local:new Set(getLocalHolidays(year)) };
+}
+
+let {national:nationalHolidays, local:localHolidays} = getHolidaySets(currentYear);
+
+// --- CALENDAR ---
+function createCalendar(year){
+  currentYear = year;
+  yearInput.value = year;
+  const holidays = getHolidaySets(year);
+  nationalHolidays = holidays.national;
+  localHolidays = holidays.local;
+
+  if(!yearData[year]) yearData[year]={vacation:new Set(), medical:new Set()};
+  
+  // Carry-over en cadena
+  let prevYear = year-1;
+  carryOver[prevYear] = carryOver[prevYear] || 0;
+  if(yearData[prevYear]){
+    const leftover = vacationLimit - yearData[prevYear].vacation.size + (carryOver[prevYear-1] || 0);
+    carryOver[prevYear] = leftover>0 ? leftover : 0;
+  }
+
+  calendar.innerHTML = "";
+
+  for(let m=0; m<12; m++){
+    const firstDay = new Date(year,m,1).getDay();
+    const totalDays = new Date(year,m+1,0).getDate();
+    const monthDiv = document.createElement("div");
+    monthDiv.className = "month";
+    const title = document.createElement("h2");
+    title.textContent = months[m];
+    monthDiv.appendChild(title);
+
+    const daysDiv = document.createElement("div");
+    daysDiv.className = "days";
+
+    dayNames.forEach(d=>{
+      const label = document.createElement("div");
+      label.className="day"; label.style.fontWeight="bold"; label.textContent=d;
+      daysDiv.appendChild(label);
+    });
+
+    const startDay = (firstDay+6)%7;
+    for(let i=0;i<startDay;i++) daysDiv.appendChild(document.createElement("div"));
+
+    for(let d=1; d<=totalDays; d++){
+      const dayDiv = document.createElement("div");
+      dayDiv.className="day"; dayDiv.textContent = d;
+      const dateKey = `${year}-${m+1}-${d}`;
+      const dayOfWeek = new Date(year,m,d).getDay();
+
+      if(dateKey===getTodayKey()) dayDiv.classList.add("today");
+      if(nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
+      else if(localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
+      else if(dayOfWeek===0||dayOfWeek===6) dayDiv.classList.add("weekend");
+      else dayDiv.addEventListener("click",()=>handleDayClick(dayDiv,year,m,d));
+
+      // Vacaciones normales y año anterior
+      if(yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
+      else if(carryOver[year-1] && carryOver[year-1]>0){
+        dayDiv.classList.add("vacation-prev"); 
+        dayDiv.textContent += " AN"; 
+      }
+
+      if(yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
+      daysDiv.appendChild(dayDiv);
+    }
+
+    monthDiv.appendChild(daysDiv);
+    calendar.appendChild(monthDiv);
+  }
+
+  updateCounters();
+}
+
+// --- CLICK DAY ---
+function handleDayClick(dayDiv, year, month, day){
+  const dateKey = `${year}-${month+1}-${day}`;
+  const isVacation = dayDiv.classList.contains("vacation") || dayDiv.classList.contains("vacation-prev");
+  const isMedical = dayDiv.classList.contains("medical");
+
+  if(isVacation || isMedical){
+    dayDiv.classList.remove("vacation","vacation-prev","medical");
+    yearData[year].vacation.delete(dateKey);
+    yearData[year].medical.delete(dateKey);
+    if(carryOver[year-1] && dayDiv.classList.contains("vacation-prev")) carryOver[year-1]++;
+  } else {
+    const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
+    if(type==="v"){
+      dayDiv.classList.add("vacation"); 
+      yearData[year].vacation.add(dateKey);
+    } else if(type==="m"){
+      dayDiv.classList.add("medical"); 
+      yearData[year].medical.add(dateKey);
+    }
+  }
+  updateCounters();
+}
+
+// --- CONTADORES ---
+function updateCounters(){
+  const data = yearData[currentYear];
+  let carry = carryOver[currentYear-1] || 0;
+  vacationCount.textContent = "Días de vacaciones usados: "+data.vacation.size;
+  vacationPrevCount.textContent = "Días de vacaciones año anterior: "+carry;
+  medicalCount.textContent = "Días médicos: "+data.medical.size;
+  remaining.textContent = "Vacaciones restantes: "+(vacationLimit - data.vacation.size + carry);
+}
+
+function getTodayKey(){
+  const today=new Date();
+  return `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+}
+
+document.getElementById("prevYear").addEventListener("click",()=>createCalendar(currentYear-1));
+document.getElementById("nextYear").addEventListener("click",()=>createCalendar(currentYear+1));
+yearInput.addEventListener("change",()=>createCalendar(parseInt(yearInput.value)));
+
+createCalendar(currentYear);
+</script>
 </body>
 </html>
