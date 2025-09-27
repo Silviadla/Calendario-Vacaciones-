@@ -70,10 +70,12 @@
     // Objeto para guardar los días marcados por año
     let yearData = {};
 
+    // Festivos nacionales fijos
     function getFixedHolidays(year) {
       return [`${year}-1-1`, `${year}-1-6`, `${year}-5-1`, `${year}-8-15`, `${year}-11-1`, `${year}-12-6`, `${year}-12-8`, `${year}-12-25`];
     }
 
+    // Pascua y festivos relacionados
     function getEasterSunday(year) {
       const f = Math.floor,
         G = year % 19,
@@ -94,9 +96,19 @@
       return [`${year}-${thursday.getMonth()+1}-${thursday.getDate()}`, `${year}-${friday.getMonth()+1}-${friday.getDate()}`];
     }
 
+    // Festivos locales de León capital automáticos
     function getLocalHolidays(year) {
       const holidays = [];
-      if (year === 2025) holidays.push(`${year}-4-23`, `${year}-10-6`, `${year}-10-13`);
+      // San Juan: 24 de junio siempre
+      holidays.push(`${year}-6-24`);
+
+      // San Froilán: 5 de octubre, trasladado al lunes si cae en fin de semana
+      let sanFroilan = new Date(year, 9, 5); // octubre
+      const dayOfWeek = sanFroilan.getDay();
+      if (dayOfWeek === 6) sanFroilan.setDate(7); // sábado -> lunes siguiente
+      if (dayOfWeek === 0) sanFroilan.setDate(6); // domingo -> lunes siguiente
+      holidays.push(`${year}-${sanFroilan.getMonth() + 1}-${sanFroilan.getDate()}`);
+
       return holidays;
     }
 
@@ -117,7 +129,6 @@
       nationalHolidays = holidays.national;
       localHolidays = holidays.local;
 
-      // Inicializar datos del año si no existen
       if (!yearData[year]) yearData[year] = { vacation: new Set(), medical: new Set() };
 
       calendar.innerHTML = "";
@@ -154,11 +165,9 @@
           if (dateKey === getTodayKey()) dayDiv.classList.add("today");
           if (nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
           else if (localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
-          else {
-            dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
-          }
+          else dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
 
-          // Restaurar clases desde yearData
+          // Restaurar días marcados
           if (yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
           if (yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
 
