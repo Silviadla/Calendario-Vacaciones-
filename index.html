@@ -9,6 +9,7 @@
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; margin: 0; padding: 1rem; background-color: #f0f8ff; }
     h1 { text-align: center; margin-bottom: 0.5rem; }
+    .year-selector { text-align: center; margin-bottom: 1rem; }
     .counters { text-align: center; margin-bottom: 1rem; }
     .calendar { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
     .month { background-color: #fff; border-radius: 10px; padding: 0.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -17,59 +18,59 @@
     .day { border: 1px solid #ccc; padding: 0.4rem; text-align: center; cursor: pointer; border-radius: 4px; }
     .vacation { background-color: #FFCC80; }
     .medical { background-color: #90CAF9; }
-    .holiday-national { background-color: #F28B82; } /* Festivos nacionales en rojo suave */
-    .holiday-local { background-color: #E1BEE7; }    /* Festivos locales en magenta */
+    .holiday-national { background-color: #F28B82; }
+    .holiday-local { background-color: #E1BEE7; }
     .today { border: 2px solid #3f51b5; }
     .labels { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; flex-wrap: wrap; }
     .labels span { display: inline-flex; align-items: center; gap: 0.3rem; }
-    .vacation-dot { width: 1rem; height: 1rem; background-color: #FFCC80; border-radius: 50%; display: inline-block; }
-    .medical-dot { width: 1rem; height: 1rem; background-color: #90CAF9; border-radius: 50%; display: inline-block; }
-    .holiday-national-dot { width: 1rem; height: 1rem; background-color: #F28B82; border-radius: 50%; display: inline-block; }
-    .holiday-local-dot { width: 1rem; height: 1rem; background-color: #E1BEE7; border-radius: 50%; display: inline-block; }
+    .vacation-dot, .medical-dot, .holiday-national-dot, .holiday-local-dot { width: 1rem; height: 1rem; border-radius: 50%; display: inline-block; }
+    .vacation-dot { background-color: #FFCC80; }
+    .medical-dot { background-color: #90CAF9; }
+    .holiday-national-dot { background-color: #F28B82; }
+    .holiday-local-dot { background-color: #E1BEE7; }
     @media (max-width: 600px) { .days { font-size: 0.7rem; } }
   </style>
 </head>
 <body>
   <h1>Calendario Vacaciones</h1>
+
+  <div class="year-selector">
+    <button id="prevYear">« Año anterior</button>
+    <input type="number" id="yearInput" value="2025" min="2000" max="2100" style="width:80px; text-align:center;">
+    <button id="nextYear">Año siguiente »</button>
+  </div>
+
   <div class="counters">
     <p id="vacationCount">Días de vacaciones usados: 0</p>
     <p id="medicalCount">Días médicos: 0</p>
     <p id="remaining">Vacaciones restantes: 23</p>
   </div>
+
   <div class="labels">
     <span><span class="vacation-dot"></span> Vacaciones</span>
     <span><span class="medical-dot"></span> Médico</span>
     <span><span class="holiday-national-dot"></span> Festivo Nacional</span>
     <span><span class="holiday-local-dot"></span> Festivo Local</span>
   </div>
+
   <div class="calendar" id="calendar"></div>
 
   <script>
-    const calendar = document.getElementById("calendar");
-    const currentYear = new Date().getFullYear();
+    let currentYear = new Date().getFullYear();
     const vacationLimit = 23;
     const vacationCount = document.getElementById("vacationCount");
     const medicalCount = document.getElementById("medicalCount");
     const remaining = document.getElementById("remaining");
+    const yearInput = document.getElementById("yearInput");
+    const calendar = document.getElementById("calendar");
 
     const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
     const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-    // === Festivos fijos nacionales (iguales cada año) ===
     function getFixedHolidays(year) {
-      return [
-        `${year}-1-1`,   // Año Nuevo
-        `${year}-1-6`,   // Reyes
-        `${year}-5-1`,   // Día del Trabajo
-        `${year}-8-15`,  // Asunción
-        `${year}-11-1`,  // Todos los Santos
-        `${year}-12-6`,  // Constitución
-        `${year}-12-8`,  // Inmaculada
-        `${year}-12-25`  // Navidad
-      ];
+      return [`${year}-1-1`, `${year}-1-6`, `${year}-5-1`, `${year}-8-15`, `${year}-11-1`, `${year}-12-6`, `${year}-12-8`, `${year}-12-25`];
     }
 
-    // === Cálculo de la Pascua (computus) ===
     function getEasterSunday(year) {
       const f = Math.floor,
         G = year % 19,
@@ -83,44 +84,37 @@
       return new Date(year, month - 1, day);
     }
 
-    // === Festivos variables nacionales: Jueves y Viernes Santo ===
     function getEasterRelatedHolidays(year) {
       const easter = getEasterSunday(year);
-      const thursday = new Date(easter);
-      thursday.setDate(easter.getDate() - 3); // Jueves Santo
-      const friday = new Date(easter);
-      friday.setDate(easter.getDate() - 2);   // Viernes Santo
-      return [
-        `${year}-${thursday.getMonth() + 1}-${thursday.getDate()}`,
-        `${year}-${friday.getMonth() + 1}-${friday.getDate()}`
-      ];
+      const thursday = new Date(easter); thursday.setDate(easter.getDate() - 3);
+      const friday = new Date(easter); friday.setDate(easter.getDate() - 2);
+      return [`${year}-${thursday.getMonth()+1}-${thursday.getDate()}`, `${year}-${friday.getMonth()+1}-${friday.getDate()}`];
     }
 
-    // === Festivos autonómicos/locales (manual cada año) ===
     function getLocalHolidays(year) {
       const holidays = [];
-      if (year === 2025) {
-        holidays.push(`${year}-4-23`); // Castilla y León
-        holidays.push(`${year}-10-6`); // San Froilán (trasladado)
-        holidays.push(`${year}-10-13`); // Traslado Fiesta Nacional
-      }
+      if (year === 2025) holidays.push(`${year}-4-23`, `${year}-10-6`, `${year}-10-13`);
       return holidays;
     }
 
-    // === Generador de festivos separados ===
     function getHolidaySets(year) {
-      const national = new Set([
-        ...getFixedHolidays(year),
-        ...getEasterRelatedHolidays(year)
-      ]);
-      const local = new Set(getLocalHolidays(year));
-      return { national, local };
+      return {
+        national: new Set([...getFixedHolidays(year), ...getEasterRelatedHolidays(year)]),
+        local: new Set(getLocalHolidays(year))
+      };
     }
 
-    const { national: nationalHolidays, local: localHolidays } = getHolidaySets(currentYear);
+    let { national: nationalHolidays, local: localHolidays } = getHolidaySets(currentYear);
 
     function createCalendar(year) {
+      currentYear = year;
+      yearInput.value = year;
+      const holidays = getHolidaySets(year);
+      nationalHolidays = holidays.national;
+      localHolidays = holidays.local;
+
       calendar.innerHTML = "";
+
       for (let m = 0; m < 12; m++) {
         const firstDay = new Date(year, m, 1).getDay();
         const totalDays = new Date(year, m + 1, 0).getDate();
@@ -142,26 +136,17 @@
         });
 
         const startDay = (firstDay + 6) % 7;
-        for (let i = 0; i < startDay; i++) {
-          const empty = document.createElement("div");
-          daysDiv.appendChild(empty);
-        }
+        for (let i = 0; i < startDay; i++) daysDiv.appendChild(document.createElement("div"));
 
         for (let d = 1; d <= totalDays; d++) {
           const dayDiv = document.createElement("div");
           dayDiv.className = "day";
           dayDiv.textContent = d;
-          const dateKey = `${year}-${m + 1}-${d}`;
-          if (dateKey === getTodayKey()) {
-            dayDiv.classList.add("today");
-          }
-          if (nationalHolidays.has(dateKey)) {
-            dayDiv.classList.add("holiday-national");
-          } else if (localHolidays.has(dateKey)) {
-            dayDiv.classList.add("holiday-local");
-          } else {
-            dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
-          }
+          const dateKey = `${year}-${m+1}-${d}`;
+          if (dateKey === getTodayKey()) dayDiv.classList.add("today");
+          if (nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
+          else if (localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
+          else dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
           daysDiv.appendChild(dayDiv);
         }
 
@@ -175,9 +160,8 @@
       const isVacation = dayDiv.classList.contains("vacation");
       const isMedical = dayDiv.classList.contains("medical");
 
-      if (isVacation || isMedical) {
-        dayDiv.classList.remove("vacation", "medical");
-      } else {
+      if (isVacation || isMedical) { dayDiv.classList.remove("vacation","medical"); }
+      else {
         const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
         if (type === "v") {
           const date = new Date(year, month, day);
@@ -186,48 +170,28 @@
             const confirmWeek = confirm("¿Quieres marcar toda la semana hasta el viernes?");
             if (confirmWeek) {
               for (let i = day; i <= day + (5 - dayOfWeek); i++) {
-                const selector = `.month:nth-child(${month + 1}) .day`;
-                const daysInMonth = document.querySelectorAll(selector);
-                daysInMonth.forEach(div => {
-                  if (parseInt(div.textContent) === i && !isNaN(i) && 
-                      !div.classList.contains("holiday-national") &&
-                      !div.classList.contains("holiday-local")) {
-                    div.classList.add("vacation");
-                    div.classList.remove("medical");
+                const selector = `.month:nth-child(${month+1}) .day`;
+                document.querySelectorAll(selector).forEach(div => {
+                  if (parseInt(div.textContent) === i && !isNaN(i) && !div.classList.contains("holiday-national") && !div.classList.contains("holiday-local")) {
+                    div.classList.add("vacation"); div.classList.remove("medical");
                   }
                 });
               }
-            } else {
-              dayDiv.classList.add("vacation");
-            }
-          } else {
-            dayDiv.classList.add("vacation");
-          }
-        } else if (type === "m") {
-          dayDiv.classList.add("medical");
-        }
+            } else dayDiv.classList.add("vacation");
+          } else dayDiv.classList.add("vacation");
+        } else if (type === "m") dayDiv.classList.add("medical");
       }
       updateCounters();
     }
 
     function updateCounters() {
-      let vacationDays = 0;
-      let medicalDays = 0;
-      const allDays = document.querySelectorAll(".day");
-
-      allDays.forEach((div) => {
-        const parentMonth = div.closest(".month");
-        const monthIndex = Array.from(calendar.children).indexOf(parentMonth);
-        const day = parseInt(div.textContent);
-        if (!isNaN(day)) {
-          const date = new Date(currentYear, monthIndex, day);
-          if (date.getFullYear() === currentYear) {
-            if (div.classList.contains("vacation")) vacationDays++;
-            if (div.classList.contains("medical")) medicalDays++;
-          }
+      let vacationDays = 0, medicalDays = 0;
+      document.querySelectorAll(".day").forEach(div => {
+        if (!isNaN(parseInt(div.textContent))) {
+          if (div.classList.contains("vacation")) vacationDays++;
+          if (div.classList.contains("medical")) medicalDays++;
         }
       });
-
       vacationCount.textContent = "Días de vacaciones usados: " + vacationDays;
       medicalCount.textContent = "Días médicos: " + medicalDays;
       remaining.textContent = "Vacaciones restantes: " + (vacationLimit - vacationDays);
@@ -235,8 +199,12 @@
 
     function getTodayKey() {
       const today = new Date();
-      return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+      return `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
     }
+
+    document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear - 1));
+    document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear + 1));
+    yearInput.addEventListener("change", () => createCalendar(parseInt(yearInput.value)));
 
     createCalendar(currentYear);
   </script>
