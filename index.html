@@ -158,6 +158,13 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+        .auto-calculation-info {
+            background-color: #e8f5e9;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
         @media (max-width: 600px) {
             .days {
                 font-size: 0.7rem;
@@ -179,15 +186,16 @@
     <div class="config-panel">
         <h3>Configuración de Vacaciones</h3>
         <div class="config-row">
-            <label>Días de vacaciones del año actual (2025):</label>
+            <label>Días de vacaciones del año actual:</label>
             <input type="number" id="vacationCurrentInput" value="23" min="0" max="365">
         </div>
         <div class="config-row">
-            <label>Días de vacaciones del año anterior (2024) disponibles:</label>
-            <input type="number" id="vacationPreviousInput" value="3" min="0" max="365">
+            <label>Días de vacaciones del año anterior disponibles:</label>
+            <input type="number" id="vacationPreviousInput" value="0" min="0" max="365" readonly>
+            <span style="color: #666;">(Calculado automáticamente)</span>
         </div>
-        <div class="config-row">
-            <button id="saveConfig">Guardar Configuración</button>
+        <div class="auto-calculation-info">
+            <strong>Información:</strong> Los días del año anterior se calculan automáticamente como los días no utilizados del año actual anterior.
         </div>
     </div>
     
@@ -205,7 +213,7 @@
         <div class="counter-box">
             <p id="medicalCount">Días médicos: 0</p>
             <p id="remaining">Vacaciones restantes: 23</p>
-            <p id="remainingPrevious">Vacaciones del año anterior restantes: 3</p>
+            <p id="remainingPrevious">Vacaciones del año anterior restantes: 0</p>
         </div>
     </div>
     
@@ -223,12 +231,10 @@
     <script>
         let currentYear = new Date().getFullYear();
         let vacationLimitCurrent = 23;
-        let vacationLimitPrevious = 3;
         
         // Elementos de la configuración
         const vacationCurrentInput = document.getElementById("vacationCurrentInput");
         const vacationPreviousInput = document.getElementById("vacationPreviousInput");
-        const saveConfigButton = document.getElementById("saveConfig");
         
         // Elementos de contadores
         const vacationCount = document.getElementById("vacationCount");
@@ -259,18 +265,28 @@
             }
         };
         
-        // Guardar configuración
-        saveConfigButton.addEventListener("click", function() {
-            vacationLimitCurrent = parseInt(vacationCurrentInput.value) || 23;
-            vacationLimitPrevious = parseInt(vacationPreviousInput.value) || 0;
+        // Función para calcular automáticamente los días del año anterior disponibles
+        function calculatePreviousYearDays(year) {
+            const previousYear = year - 1;
             
-            if (yearData[currentYear]) {
-                yearData[currentYear].limit = vacationLimitCurrent;
+            // Si no hay datos para el año anterior, no hay días disponibles
+            if (!yearData[previousYear]) {
+                return 0;
             }
             
-            updateCounters();
-            alert("Configuración guardada correctamente");
-        });
+            const previousYearData = yearData[previousYear];
+            const daysUsed = previousYearData.vacation.size;
+            const daysAvailable = previousYearData.limit;
+            
+            // Los días disponibles del año anterior son los que no se usaron
+            const remainingDays = Math.max(0, daysAvailable - daysUsed);
+            
+            // Aplicar la regla del 30% (redondeando hacia abajo)
+            const maxTransferable = Math.floor(daysAvailable * 0.3);
+            const transferableDays = Math.min(remainingDays, maxTransferable);
+            
+            return transferableDays;
+        }
         
         // Función para obtener días festivos nacionales
         function getFixedHolidays(year) {
@@ -355,13 +371,9 @@
             // Actualizar los inputs de configuración según el año
             vacationCurrentInput.value = vacationLimitCurrent;
             
-            // Para el año anterior, mostrar los días que quedan
-            if (year === 2025) {
-                vacationPreviousInput.value = vacationLimitPrevious;
-            } else {
-                vacationPreviousInput.value = 0;
-                document.querySelector('.config-row:nth-child(2)').style.display = 'none';
-            }
+            // Calcular automáticamente los días del año anterior
+            const previousYearDays = calculatePreviousYearDays(year);
+            vacationPreviousInput.value = previousYearDays;
             
             const holidays = getHolidaySets(year);
             nationalHolidays = holidays.national;
@@ -459,7 +471,7 @@
                 yearData[year].medical.delete(dateKey);
             } else {
                 // Solo permitir usar vacaciones del año anterior en el año siguiente
-                const options = year === currentYear - 1 ? 
+                const options = year <= currentYear - 1 ? 
                     "v = vacaciones año actual, m = médico" : 
                     "v = vacaciones año actual, a = vacaciones año anterior, m = médico";
                 
@@ -467,8 +479,8 @@
                 
                 if(type === "v" || type === "a") {
                     // Solo permitir 'a' (vacaciones año anterior) si estamos en el año siguiente
-                    if (type === "a" && year === currentYear - 1) {
-                        alert("No puedes usar vacaciones del año anterior en el mismo año. Usa esta opción en el año siguiente.");
+                    if (type === "a" && year <= currentYear - 1) {
+                        alert("No puedes usar vacaciones del año anterior en años pasados. Usa esta opción en el año siguiente al que corresponden las vacaciones.");
                         return;
                     }
                     
@@ -531,20 +543,23 @@
         // Función para actualizar contadores
         function updateCounters() {
             const data = yearData[currentYear];
-            const previousYearData = yearData[currentYear-1] || { vacation: new Set() };
+            const previousYearDays = calculatePreviousYearDays(currentYear);
             
             const vacationUsed = data.vacation.size;
             const vacationPreviousUsed = data.vacationPrevious.size;
             const medicalUsed = data.medical.size;
             
             const vacationRemaining = vacationLimitCurrent - vacationUsed;
-            const vacationPreviousRemaining = Math.max(0, vacationLimitPrevious - vacationPreviousUsed);
+            const vacationPreviousRemaining = Math.max(0, previousYearDays - vacationPreviousUsed);
             
             vacationCount.textContent = `Días de vacaciones usados: ${vacationUsed}`;
             vacationPreviousCount.textContent = `Días del año anterior usados: ${vacationPreviousUsed}`;
             medicalCount.textContent = `Días médicos: ${medicalUsed}`;
             remaining.textContent = `Vacaciones restantes: ${vacationRemaining}`;
             remainingPrevious.textContent = `Vacaciones del año anterior restantes: ${vacationPreviousRemaining}`;
+            
+            // Actualizar también el campo de configuración
+            vacationPreviousInput.value = previousYearDays;
         }
         
         // Función para obtener la fecha actual en formato clave
@@ -557,6 +572,15 @@
         document.getElementById("prevYear").addEventListener("click", () => createCalendar(currentYear-1));
         document.getElementById("nextYear").addEventListener("click", () => createCalendar(currentYear+1));
         yearInput.addEventListener("change", () => createCalendar(parseInt(yearInput.value)));
+        
+        // Actualizar límite cuando cambia el input
+        vacationCurrentInput.addEventListener("change", function() {
+            vacationLimitCurrent = parseInt(this.value) || 23;
+            if (yearData[currentYear]) {
+                yearData[currentYear].limit = vacationLimitCurrent;
+            }
+            updateCounters();
+        });
         
         // Inicializar calendario
         createCalendar(currentYear);
