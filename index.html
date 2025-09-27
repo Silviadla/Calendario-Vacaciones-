@@ -17,7 +17,9 @@
   .days { display:grid; grid-template-columns: repeat(7,1fr); gap:3px; font-size:0.8rem; }
   .day { border:1px solid #ccc; padding:0.4rem; text-align:center; cursor:pointer; border-radius:4px; }
   .vacation { background-color:#FFCC80; }
-  .vacation-prev { background-color:#FFD700; font-weight:bold; } /* vacaciones año anterior */
+  .vacation-previous {
+    background-color: #FFD54F; /* otro tono de amarillo diferente */
+}/* vacaciones año anterior */
   .medical { background-color:#90CAF9; }
   .holiday-national { background-color:#F28B82; }
   .holiday-local { background-color:#E1BEE7; }
@@ -123,74 +125,45 @@ function getHolidaySets(year){
 let {national:nationalHolidays, local:localHolidays} = getHolidaySets(currentYear);
 
 // --- CALENDAR ---
-function createCalendar(year){
-  currentYear = year;
-  yearInput.value = year;
-  const holidays = getHolidaySets(year);
-  nationalHolidays = holidays.national;
-  localHolidays = holidays.local;
+function createCalendar(year) {
+    currentYear = year;
+    yearInput.value = year;
+    const holidays = getHolidaySets(year);
+    nationalHolidays = holidays.national;
+    localHolidays = holidays.local;
 
-  if(!yearData[year]) yearData[year]={vacation:new Set(), medical:new Set()};
-  
-  // Carry-over en cadena
-  let prevYear = year-1;
-  carryOver[prevYear] = carryOver[prevYear] || 0;
-  if(yearData[prevYear]){
-    const leftover = vacationLimit - yearData[prevYear].vacation.size + (carryOver[prevYear-1] || 0);
-    carryOver[prevYear] = leftover>0 ? leftover : 0;
-  }
+    if(!yearData[year]) yearData[year] = { vacation: new Set(), medical: new Set() };
 
-  calendar.innerHTML = "";
+    calendar.innerHTML = "";
 
-  for(let m=0; m<12; m++){
-    const firstDay = new Date(year,m,1).getDay();
-    const totalDays = new Date(year,m+1,0).getDate();
-    const monthDiv = document.createElement("div");
-    monthDiv.className = "month";
-    const title = document.createElement("h2");
-    title.textContent = months[m];
-    monthDiv.appendChild(title);
+  for(let d=1; d<=totalDays; d++) {
+            const dayDiv = document.createElement("div");
+            dayDiv.className = "day";
+            dayDiv.textContent = d;
+            const dateKey = `${year}-${m+1}-${d}`;
+            const dayOfWeek = new Date(year, m, d).getDay();
 
-    const daysDiv = document.createElement("div");
-    daysDiv.className = "days";
+            // Diferenciar vacaciones del año anterior
+            if(previousYearVacations[year-1] && previousYearVacations[year-1].has(dateKey)) {
+                dayDiv.classList.add("vacation-previous"); // clase CSS nueva
+            }
 
-    dayNames.forEach(d=>{
-      const label = document.createElement("div");
-      label.className="day"; label.style.fontWeight="bold"; label.textContent=d;
-      daysDiv.appendChild(label);
-    });
+            // Resto de condiciones existentes
+            if(nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
+            else if(localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
+            else if(dayOfWeek === 0 || dayOfWeek === 6) dayDiv.classList.add("weekend");
+            else dayDiv.addEventListener("click", () => handleDayClick(dayDiv, year, m, d));
 
-    const startDay = (firstDay+6)%7;
-    for(let i=0;i<startDay;i++) daysDiv.appendChild(document.createElement("div"));
+            if(yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
+            if(yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
 
-    for(let d=1; d<=totalDays; d++){
-      const dayDiv = document.createElement("div");
-      dayDiv.className="day"; dayDiv.textContent = d;
-      const dateKey = `${year}-${m+1}-${d}`;
-      const dayOfWeek = new Date(year,m,d).getDay();
-
-      if(dateKey===getTodayKey()) dayDiv.classList.add("today");
-      if(nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
-      else if(localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
-      else if(dayOfWeek===0||dayOfWeek===6) dayDiv.classList.add("weekend");
-      else dayDiv.addEventListener("click",()=>handleDayClick(dayDiv,year,m,d));
-
-      // Vacaciones normales y año anterior
-      if(yearData[year].vacation.has(dateKey)) dayDiv.classList.add("vacation");
-      else if(carryOver[year-1] && carryOver[year-1]>0){
-        dayDiv.classList.add("vacation-prev"); 
-        dayDiv.textContent += " AN"; 
-      }
-
-      if(yearData[year].medical.has(dateKey)) dayDiv.classList.add("medical");
-      daysDiv.appendChild(dayDiv);
+            daysDiv.appendChild(dayDiv);
+        }
+        monthDiv.appendChild(daysDiv);
+        calendar.appendChild(monthDiv);
     }
 
-    monthDiv.appendChild(daysDiv);
-    calendar.appendChild(monthDiv);
-  }
-
-  updateCounters();
+    updateCounters();
 }
 
 // --- CLICK DAY ---
