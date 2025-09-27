@@ -70,25 +70,18 @@
     const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
     const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-    let yearData = {};
+    let yearData = {};    // Guarda días usados por año
+    let carryOver = {};   // Días sobrantes del año anterior
 
     function getFixedHolidays(year) {
       const fixed = [
-        { month:1, day:1 },   // Año Nuevo
-        { month:1, day:6 },   // Reyes
-        { month:5, day:1 },   // Día del Trabajador
-        { month:8, day:15 },  // Asunción
-        { month:10, day:12 }, // Fiesta Nacional
-        { month:11, day:1 },  // Todos los Santos
-        { month:12, day:6 },  // Constitución
-        { month:12, day:8 },  // Inmaculada
-        { month:12, day:25 }  // Navidad
+        { month:1, day:1 }, { month:1, day:6 }, { month:5, day:1 },
+        { month:8, day:15 }, { month:10, day:12 }, { month:11, day:1 },
+        { month:12, day:6 }, { month:12, day:8 }, { month:12, day:25 }
       ];
       return fixed.map(f => {
         let date = new Date(year, f.month-1, f.day);
-        // Solo 12 octubre se pasa si cae domingo
         if(f.month === 10 && f.day === 12 && date.getDay() === 0) date.setDate(13);
-        // Año Nuevo, Reyes, etc. no se trasladan (opcional)
         return `${year}-${date.getMonth()+1}-${date.getDate()}`;
       });
     }
@@ -109,15 +102,11 @@
 
     function getLocalHolidays(year) {
       const holidays = [];
-      holidays.push(`${year}-6-24`); // San Juan
-
+      holidays.push(`${year}-6-24`);
       let sanFroilan = new Date(year, 9, 5);
       if(sanFroilan.getDay() === 0) sanFroilan.setDate(6);
       holidays.push(`${year}-${sanFroilan.getMonth()+1}-${sanFroilan.getDate()}`);
-
-      let diaCastilla = new Date(year, 3, 23); // 23 abril
-      holidays.push(`${year}-${diaCastilla.getMonth()+1}-${diaCastilla.getDate()}`);
-
+      holidays.push(`${year}-4-23`);
       return holidays;
     }
 
@@ -139,6 +128,13 @@
       localHolidays = holidays.local;
 
       if(!yearData[year]) yearData[year] = { vacation: new Set(), medical: new Set() };
+
+      // Calcular carry-over del año anterior
+      const prevYearData = yearData[year-1];
+      if(prevYearData) {
+        const leftover = vacationLimit - prevYearData.vacation.size;
+        carryOver[year-1] = leftover > 0 ? leftover : 0;
+      }
 
       calendar.innerHTML = "";
 
@@ -173,7 +169,6 @@
           const dayOfWeek = new Date(year, m, d).getDay();
 
           if(dateKey === getTodayKey()) dayDiv.classList.add("today");
-
           if(nationalHolidays.has(dateKey)) dayDiv.classList.add("holiday-national");
           else if(localHolidays.has(dateKey)) dayDiv.classList.add("holiday-local");
           else if(dayOfWeek === 0 || dayOfWeek === 6) dayDiv.classList.add("weekend");
@@ -206,6 +201,12 @@
         if(type==="v") {
           const date = new Date(year, month, day);
           const dayOfWeek = date.getDay();
+          let totalAvailable = vacationLimit - yearData[year].vacation.size + (carryOver[year-1] || 0);
+          if(totalAvailable <= 0) { alert("No te quedan días de vacaciones disponibles."); return; }
+
+          const useCarry = Math.min(carryOver[year-1] || 0, 1); // gastar primero del año anterior
+          if(useCarry > 0) carryOver[year-1] -= useCarry;
+
           if(dayOfWeek>=1 && dayOfWeek<=5) {
             const confirmWeek = confirm("¿Quieres marcar toda la semana hasta el viernes?");
             if(confirmWeek) {
@@ -239,9 +240,11 @@
 
     function updateCounters() {
       const data = yearData[currentYear];
+      const previousYear = currentYear - 1;
+      const carry = carryOver[previousYear] || 0;
       vacationCount.textContent = "Días de vacaciones usados: " + data.vacation.size;
       medicalCount.textContent = "Días médicos: " + data.medical.size;
-      remaining.textContent = "Vacaciones restantes: " + (vacationLimit - data.vacation.size);
+      remaining.textContent = "Vacaciones restantes: " + (vacationLimit - data.vacation.size + carry);
     }
 
     function getTodayKey() {
