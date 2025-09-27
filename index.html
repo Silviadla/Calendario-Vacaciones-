@@ -26,11 +26,22 @@
     .medical-dot { width: 1rem; height: 1rem; background-color: #90CAF9; border-radius: 50%; display: inline-block; }
     .holiday-national-dot { width: 1rem; height: 1rem; background-color: #F28B82; border-radius: 50%; display: inline-block; }
     .holiday-local-dot { width: 1rem; height: 1rem; background-color: #E1BEE7; border-radius: 50%; display: inline-block; }
+    .year-nav { text-align: center; margin-bottom: 1rem; }
+    .year-nav button { margin: 0 0.5rem; padding: 0.3rem 0.8rem; border: none; background: #3f51b5; color: white; border-radius: 5px; cursor: pointer; }
+    .year-nav button:hover { background: #2c3a91; }
     @media (max-width: 600px) { .days { font-size: 0.7rem; } }
   </style>
 </head>
 <body>
   <h1>Calendario Vacaciones</h1>
+
+  <!-- 🔹 Navegación por años -->
+  <div class="year-nav">
+    <button onclick="changeYear(-1)">⬅ Año anterior</button>
+    <span id="yearDisplay" style="font-weight:bold; margin: 0 1rem;"></span>
+    <button onclick="changeYear(1)">Año siguiente ➡</button>
+  </div>
+
   <div class="counters">
     <p id="vacationCount">Días de vacaciones usados: 0</p>
     <p id="medicalCount">Días médicos: 0</p>
@@ -46,11 +57,12 @@
 
   <script>
     const calendar = document.getElementById("calendar");
-    const currentYear = new Date().getFullYear();
+    let currentYear = new Date().getFullYear();  // 🔹 variable global de año
     const vacationLimit = 23;
     const vacationCount = document.getElementById("vacationCount");
     const medicalCount = document.getElementById("medicalCount");
     const remaining = document.getElementById("remaining");
+    const yearDisplay = document.getElementById("yearDisplay");
 
     const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
     const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -104,6 +116,7 @@
         holidays.push(`${year}-10-6`); // San Froilán (trasladado)
         holidays.push(`${year}-10-13`); // Traslado Fiesta Nacional
       }
+      // aquí puedes añadir festivos para otros años
       return holidays;
     }
 
@@ -117,9 +130,10 @@
       return { national, local };
     }
 
-    const { national: nationalHolidays, local: localHolidays } = getHolidaySets(currentYear);
+    let { national: nationalHolidays, local: localHolidays } = getHolidaySets(currentYear);
 
     function createCalendar(year) {
+      yearDisplay.textContent = year; // mostrar año arriba
       calendar.innerHTML = "";
       for (let m = 0; m < 12; m++) {
         const firstDay = new Date(year, m, 1).getDay();
@@ -238,7 +252,18 @@
       return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
     }
 
+    // 🔹 Cambiar año
+    function changeYear(offset) {
+      currentYear += offset;
+      const sets = getHolidaySets(currentYear);
+      nationalHolidays = sets.national;
+      localHolidays = sets.local;
+      createCalendar(currentYear);
+    }
+
+    // inicializar
     createCalendar(currentYear);
   </script>
 </body>
 </html>
+
