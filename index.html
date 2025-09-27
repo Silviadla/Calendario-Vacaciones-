@@ -165,8 +165,10 @@ function createCalendar(year){
 
     for(let d=1; d<=totalDays; d++){
       const dayDiv = document.createElement("div");
-      dayDiv.className="day"; dayDiv.textContent = d;
+      dayDiv.className="day"; 
+      dayDiv.textContent = d;
       const dateKey = `${year}-${m+1}-${d}`;
+      dayDiv.dataset.date = dateKey; // <- necesario para marcar la semana
       const dayOfWeek = new Date(year,m,d).getDay();
 
       if(dateKey===getTodayKey()) dayDiv.classList.add("today");
@@ -193,27 +195,52 @@ function createCalendar(year){
 // --- CLICK DAY ---
 function handleDayClick(dayDiv, year, month, day){
   const dateKey = `${year}-${month+1}-${day}`;
-  const isVacation = dayDiv.classList.contains("vacation");
+  const isVacation = dayDiv.classList.contains("vacation") || dayDiv.classList.contains("vacation-prev");
   const isMedical = dayDiv.classList.contains("medical");
 
   if(isVacation || isMedical){
     dayDiv.classList.remove("vacation","medical","vacation-prev");
     yearData[year].vacation.delete(dateKey);
     yearData[year].medical.delete(dateKey);
+    if(dayDiv.classList.contains("vacation-prev") && carryOver[year-1] !== undefined) carryOver[year-1]++;
   } else {
-    let type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
+    const type = prompt("¿Qué quieres marcar? (v = vacaciones, m = médico)").toLowerCase();
     if(type==="v"){
       let usePrev = false;
       if(carryOver[year-1] && carryOver[year-1]>0){
         usePrev = confirm(`Tienes ${carryOver[year-1]} días de vacaciones del año anterior. ¿Quieres usar uno?`);
       }
-      if(usePrev){
-        dayDiv.classList.add("vacation-prev"); 
-        dayDiv.textContent += " AN";
-        carryOver[year-1]--;
+
+      // Preguntar si quieres vacaciones hasta el viernes
+      const dayOfWeek = new Date(year,month,day).getDay(); // 0=Domingo, 6=Sábado
+      let markWeek = false;
+      if(dayOfWeek >=1 && dayOfWeek <=5){ // solo lunes a viernes
+        markWeek = confirm("¿Quieres coger vacaciones hasta el viernes de esta semana?");
+      }
+
+      if(markWeek){
+        // marcar todos los días hasta el viernes
+        for(let i=dayOfWeek;i<=5;i++){
+          let date = new Date(year,month,day + (i - dayOfWeek));
+          const dateKeyWeek = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
+          const div = document.querySelector(`.day[data-date='${dateKeyWeek}']`);
+          if(usePrev && carryOver[year-1]>0){
+            carryOver[year-1]--;
+            if(div){ div.classList.add("vacation-prev"); div.textContent += " AN"; }
+          } else {
+            yearData[year].vacation.add(dateKeyWeek);
+            if(div) div.classList.add("vacation");
+          }
+        }
       } else {
-        dayDiv.classList.add("vacation"); 
-        yearData[year].vacation.add(dateKey);
+        if(usePrev){
+          dayDiv.classList.add("vacation-prev"); 
+          dayDiv.textContent += " AN";
+          carryOver[year-1]--;
+        } else {
+          dayDiv.classList.add("vacation"); 
+          yearData[year].vacation.add(dateKey);
+        }
       }
     } else if(type==="m"){
       dayDiv.classList.add("medical"); 
